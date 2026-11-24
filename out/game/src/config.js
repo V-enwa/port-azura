@@ -56,7 +56,7 @@ export const CAR_TYPES = {
   sedan: { name: 'Sedan', speed: 30, accel: 20, brake: 35, weight: 1, health: 100, colour: '#7ec8e3' },
   taxi: { name: 'Taxi', speed: 28, accel: 18, brake: 32, weight: 1.1, health: 100, colour: '#f5c842' },
   truck: { name: 'Truck', speed: 22, accel: 10, brake: 24, weight: 2.5, health: 200, colour: '#8b8b8b' },
-  sports: { name: 'Sports', speed: 44, accel: 30, brake: 40, weight: 0.8, health: 80, colour: '#e74c3c' },
+  sports: { name: 'Sports', speed: 44, accel: 30, brake: 40, weight: 0.8, health: 80, colour: '#e67e22' },
   police: { name: 'Cruiser', speed: 38, accel: 28, brake: 38, weight: 1.2, health: 150, colour: '#1a1a2e' },
   comet: { name: 'Comet', speed: 40, accel: 28, brake: 36, weight: 0.9, health: 90, colour: '#f39c12' },
   gold_comet: { name: 'Gold Comet', speed: 42, accel: 30, brake: 38, weight: 0.9, health: 100, colour: '#f1c40f' },
@@ -213,11 +213,11 @@ export const SCREEN = { TITLE: 0, PLAYING: 1, PAUSED: 2, BUSTED: 3, WASTED: 4, M
 export const FONT = 'monospace';
 
 export const MESH = {
-  carBodyH: 1.0,
+  carBodyH: 1.6,
   carWidth: 3.5,
   carLength: 7,
-  wheelRadius: 0.75,
-  cabinH: 0.75,
+  wheelRadius: 0.5,
+  cabinH: 1.0,
   pedHeadR: 0.35,
   pedTorso: { w: 0.8, h: 1.4, d: 0.5 },
   pedLeg: { w: 0.35, h: 1.2, d: 0.35 },

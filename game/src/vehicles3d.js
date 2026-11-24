@@ -57,180 +57,228 @@ export function createVehicles(world3d, random, audio) {
 
     const group = new THREE.Group();
 
-    // --- Main body (lower slab) ---
-    const bodyGeo = new THREE.BoxGeometry(cl - 0.6, bodyH * 0.85, cw - 0.3);
     const bodyColor = cfg.colour;
     const bodyMat = createBodyMaterial(bodyColor);
+    const trimMat = new THREE.MeshPhongMaterial({ color: 0x3a3a3a, specular: 0x222222, shininess: 20 });
+    const cabFrameMat = new THREE.MeshPhongMaterial({ color: bodyColor, specular: 0x444444, shininess: 30 });
+
+    // --- Lower body slab (the main body) ---
+    const bodyGeo = new THREE.BoxGeometry(cl * 0.84, bodyH * 0.8, cw * 0.9);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.set(0, bodyH * 0.45, 0);
+    body.position.set(0, wr + bodyH * 0.42, 0);
     body.castShadow = true;
     body.receiveShadow = true;
     group.add(body);
 
-    // --- Hood (front slope illusion) ---
-    const hoodGeo = new THREE.BoxGeometry(cl * 0.22, bodyH * 0.55, cw - 0.35);
+    // --- Hood section (front, slightly lower than cabin roof) ---
+    const hoodGeo = new THREE.BoxGeometry(cl * 0.24, bodyH * 0.38, cw * 0.88);
     const hood = new THREE.Mesh(hoodGeo, bodyMat);
-    hood.position.set(cl * 0.33, bodyH * 0.38, 0);
+    hood.position.set(cl * 0.32, wr + bodyH * 0.65, 0);
     hood.castShadow = true;
     group.add(hood);
 
-    // --- Trunk (rear slope illusion) ---
-    const trunkGeo = new THREE.BoxGeometry(cl * 0.18, bodyH * 0.5, cw - 0.35);
+    // --- Trunk section (rear) ---
+    const trunkGeo = new THREE.BoxGeometry(cl * 0.16, bodyH * 0.32, cw * 0.88);
     const trunk = new THREE.Mesh(trunkGeo, bodyMat);
-    trunk.position.set(-cl * 0.35, bodyH * 0.36, 0);
+    trunk.position.set(-cl * 0.34, wr + bodyH * 0.60, 0);
     trunk.castShadow = true;
     group.add(trunk);
 
-    // --- Front bumper ---
-    const fBumperGeo = new THREE.BoxGeometry(0.25, bodyH * 0.35, cw - 0.15);
-    const bumperMat = new THREE.MeshPhongMaterial({ color: 0x333333, specular: 0x111111, shininess: 15 });
-    const fBumper = new THREE.Mesh(fBumperGeo, bumperMat);
-    fBumper.position.set(cl / 2 - 0.25, bodyH * 0.2, 0);
+    // --- Front bumper (dark grey bar) ---
+    const fBumperGeo = new THREE.BoxGeometry(0.3, bodyH * 0.28, cw * 0.8);
+    const fBumper = new THREE.Mesh(fBumperGeo, trimMat);
+    fBumper.position.set(cl / 2 - 0.35, wr + bodyH * 0.18, 0);
     group.add(fBumper);
 
-    // --- Rear bumper ---
-    const rBumperGeo = new THREE.BoxGeometry(0.25, bodyH * 0.35, cw - 0.15);
-    const rBumper = new THREE.Mesh(rBumperGeo, bumperMat);
-    rBumper.position.set(-cl / 2 + 0.25, bodyH * 0.2, 0);
+    // --- Rear bumper (dark grey bar) ---
+    const rBumperGeo = new THREE.BoxGeometry(0.3, bodyH * 0.28, cw * 0.8);
+    const rBumper = new THREE.Mesh(rBumperGeo, trimMat);
+    rBumper.position.set(-cl / 2 + 0.35, wr + bodyH * 0.18, 0);
     group.add(rBumper);
 
-    // --- Cabin ---
-    const cabW = cw - 0.7;
-    const cabL = cl * 0.35;
-    const cabY = bodyH * 0.75 + cabinH / 2;
-    const cabZ = -0.2; // set back slightly
-    const cabinGeo = new THREE.BoxGeometry(cabL, cabinH, cabW);
-    const cabinMat = createCabinMaterial();
-    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-    cabin.position.set(-cl * 0.02, cabY, cabZ);
-    cabin.castShadow = true;
-    group.add(cabin);
+    // --- Grille panel (front fascia, dark grey) ---
+    const grilleGeo = new THREE.BoxGeometry(0.08, bodyH * 0.35, cw * 0.55);
+    const grille = new THREE.Mesh(grilleGeo, trimMat);
+    grille.position.set(cl / 2 - 0.12, wr + bodyH * 0.48, 0);
+    group.add(grille);
 
-    // --- Police PAPD door panels ---
+    // --- Headlights (pale blocks set into front fascia) ---
+    const hlGeo = new THREE.BoxGeometry(0.15, bodyH * 0.14, 0.7);
+    const hlMat = createHeadlightMaterial();
+    const hlL = new THREE.Mesh(hlGeo, hlMat);
+    hlL.position.set(cl / 2 - 0.08, wr + bodyH * 0.48, cw * 0.3);
+    group.add(hlL);
+    const hlR = new THREE.Mesh(hlGeo, hlMat);
+    hlR.position.set(cl / 2 - 0.08, wr + bodyH * 0.48, -cw * 0.3);
+    group.add(hlR);
+
+    // --- Taillights (red blocks at rear) ---
+    const tlGeo = new THREE.BoxGeometry(0.12, bodyH * 0.12, 0.55);
+    const tlMat = createTaillightMaterial();
+    const tlL = new THREE.Mesh(tlGeo, tlMat);
+    tlL.position.set(-cl / 2 + 0.08, wr + bodyH * 0.48, cw * 0.3);
+    group.add(tlL);
+    const tlR = new THREE.Mesh(tlGeo, tlMat);
+    tlR.position.set(-cl / 2 + 0.08, wr + bodyH * 0.48, -cw * 0.3);
+    group.add(tlR);
+
+    // --- Wheel arch trim (dark grey flares above each wheel) ---
+    const wheelArches = [
+      { x: cl * 0.3, z: cw / 2 + 0.05 },
+      { x: cl * 0.3, z: -cw / 2 - 0.05 },
+      { x: -cl * 0.3, z: cw / 2 + 0.05 },
+      { x: -cl * 0.3, z: -cw / 2 - 0.05 },
+    ];
+    for (var ai = 0; ai < wheelArches.length; ai++) {
+      var ap = wheelArches[ai];
+      var archGeo = new THREE.BoxGeometry(1.2, bodyH * 0.18, 2.2);
+      var arch = new THREE.Mesh(archGeo, trimMat);
+      arch.position.set(ap.x, wr + bodyH * 0.32, ap.z);
+      group.add(arch);
+    }
+
+    // --- Cabin (tall body-coloured box with glass) ---
+    const cabW = cw * 0.78;
+    const cabL = cl * 0.36;
+    const cabY = wr + bodyH * 0.8 + cabinH / 2;
+    const cabZ = -0.2;
+
+    // Cabin frame — body colour
+    const cabinFrameGeo = new THREE.BoxGeometry(cabL, cabinH, cabW);
+    const cabinFrame = new THREE.Mesh(cabinFrameGeo, cabFrameMat);
+    cabinFrame.position.set(-cl * 0.02, cabY, cabZ);
+    cabinFrame.castShadow = true;
+    group.add(cabinFrame);
+
+    // Cabin glass — dark, glossy, slightly smaller than frame
+    const glassGeo = new THREE.BoxGeometry(cabL * 0.85, cabinH * 0.72, cabW * 0.82);
+    const cabinMat = createCabinMaterial();
+    const glass = new THREE.Mesh(glassGeo, cabinMat);
+    glass.position.set(-cl * 0.02, cabY, cabZ);
+    group.add(glass);
+
+    // A-pillars (body-coloured vertical strips at cabin front corners)
+    const aPillarGeo = new THREE.BoxGeometry(0.15, cabinH * 0.8, cabW * 0.06);
+    for (var ap2 = -1; ap2 <= 1; ap2 += 2) {
+      var aPillar = new THREE.Mesh(aPillarGeo, cabFrameMat);
+      aPillar.position.set(cl * 0.1, cabY, cabZ + ap2 * (cabW * 0.4));
+      group.add(aPillar);
+    }
+
+    // Flat roof cap
+    const roofGeo = new THREE.BoxGeometry(cabL * 0.96, 0.1, cabW * 0.96);
+    const roof = new THREE.Mesh(roofGeo, cabFrameMat);
+    roof.position.set(-cl * 0.02, cabY + cabinH / 2 + 0.05, cabZ);
+    group.add(roof);
+
+    // --- Police door panels ---
     if (isPolice) {
-      const doorGeo = new THREE.BoxGeometry(cl * 0.25, bodyH * 0.55, 0.05);
-      const doorMat = new THREE.MeshPhongMaterial({ color: 0xf0f0f0, specular: 0x444444, shininess: 30 });
-      const doorL = new THREE.Mesh(doorGeo, doorMat);
-      doorL.position.set(-cl * 0.05, bodyH * 0.38, cw / 2 - 0.18);
+      var doorGeo = new THREE.BoxGeometry(cl * 0.25, bodyH * 0.55, 0.06);
+      var doorMat = new THREE.MeshPhongMaterial({ color: 0xf0f0f0, specular: 0x444444, shininess: 30 });
+      var doorL = new THREE.Mesh(doorGeo, doorMat);
+      doorL.position.set(-cl * 0.05, wr + bodyH * 0.38, cw / 2 - 0.2);
       group.add(doorL);
-      const doorR = new THREE.Mesh(doorGeo.clone(), doorMat);
-      doorR.position.set(-cl * 0.05, bodyH * 0.38, -(cw / 2 - 0.18));
+      var doorR = new THREE.Mesh(doorGeo.clone(), doorMat);
+      doorR.position.set(-cl * 0.05, wr + bodyH * 0.38, -(cw / 2 - 0.2));
       group.add(doorR);
     }
 
-    // --- Taxi sign ---
+    // --- Taxi sign (roof sign) ---
     if (isTaxi) {
-      const signGeo = new THREE.BoxGeometry(cl * 0.18, 0.2, cw * 0.4);
-      const signMat = new THREE.MeshBasicMaterial({ color: 0xf5c842 });
-      const sign = new THREE.Mesh(signGeo, signMat);
-      sign.position.set(0, cabY + cabinH / 2 + 0.15, cabZ);
+      var signGeo = new THREE.BoxGeometry(cl * 0.15, 0.22, cw * 0.35);
+      var signMat = new THREE.MeshBasicMaterial({ color: 0xf5c842 });
+      var sign = new THREE.Mesh(signGeo, signMat);
+      sign.position.set(0, cabY + cabinH / 2 + 0.16, cabZ);
       group.add(sign);
 
-      const signTextGeo = new THREE.BoxGeometry(cl * 0.10, 0.15, cw * 0.25);
-      const signTextMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-      const signText = new THREE.Mesh(signTextGeo, signTextMat);
-      signText.position.set(0, cabY + cabinH / 2 + 0.25, cabZ);
+      var signTextGeo = new THREE.BoxGeometry(cl * 0.08, 0.16, cw * 0.2);
+      var signTextMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      var signText = new THREE.Mesh(signTextGeo, signTextMat);
+      signText.position.set(0, cabY + cabinH / 2 + 0.26, cabZ);
       group.add(signText);
     }
 
-    // --- Truck variant ---
+    // --- Truck variant (cargo box) ---
     if (isTruck) {
-      const cargoGeo = new THREE.BoxGeometry(cl * 0.55, bodyH * 0.8, cw - 0.4);
-      const cargoMat = new THREE.MeshPhongMaterial({ color: 0x999999, specular: 0x222222, shininess: 20 });
-      const cargo = new THREE.Mesh(cargoGeo, cargoMat);
-      cargo.position.set(-cl * 0.22, bodyH * 0.55, 0);
+      var cargoGeo = new THREE.BoxGeometry(cl * 0.55, bodyH * 0.8, cw - 0.4);
+      var cargoMat = new THREE.MeshPhongMaterial({ color: 0x999999, specular: 0x222222, shininess: 20 });
+      var cargo = new THREE.Mesh(cargoGeo, cargoMat);
+      cargo.position.set(-cl * 0.22, wr + bodyH * 0.55, 0);
       cargo.castShadow = true;
       group.add(cargo);
     }
 
-    // --- Wheels ---
-    // Solid dark tyre: wider cylinder (1.0 tread width) so it never reads as a thin ring.
-    // Rotation puts the flat circular faces facing Z (car lateral axis), axle along Z.
-    const tyreGeo = new THREE.CylinderGeometry(wr, wr, 0.85, 20);
-    // Hub disc: thin filled disc flush against outer face so wheel never reads as hollow.
-    const hubDiscGeo = new THREE.CylinderGeometry(wr * 0.8, wr * 0.8, 0.06, 20);
-    const tyreMat = createWheelMaterial();
-    const hubMat = createHubMaterial();
+    // --- Wheels (solid black tyre disc + light grey filled hub) ---
+    var tyreGeo = new THREE.CylinderGeometry(wr, wr, 0.7, 20);
+    var hubDiscGeo = new THREE.CylinderGeometry(wr * 0.7, wr * 0.7, 0.1, 20);
+    var hubInnerGeo = new THREE.CylinderGeometry(wr * 0.35, wr * 0.35, 0.07, 16);
+    var tyreMat = createWheelMaterial();
+    var hubMat = createHubMaterial();
 
-    const wheelPositions = [
-      { x: cl * 0.3, z: cw / 2 + 0.1 },
-      { x: cl * 0.3, z: -cw / 2 - 0.1 },
-      { x: -cl * 0.3, z: cw / 2 + 0.1 },
-      { x: -cl * 0.3, z: -cw / 2 - 0.1 },
+    var wheelPositions = [
+      { x: cl * 0.3, z: cw / 2 + 0.05 },
+      { x: cl * 0.3, z: -cw / 2 - 0.05 },
+      { x: -cl * 0.3, z: cw / 2 + 0.05 },
+      { x: -cl * 0.3, z: -cw / 2 - 0.05 },
     ];
 
-    const wheelMeshes = [];
+    var wheelMeshes = [];
     for (var wi = 0; wi < wheelPositions.length; wi++) {
-      const pos = wheelPositions[wi];
-      const wheelGroup = new THREE.Group();
+      var pos = wheelPositions[wi];
+      var wheelGroup = new THREE.Group();
 
-      const tyre = new THREE.Mesh(tyreGeo, tyreMat);
+      var tyre = new THREE.Mesh(tyreGeo, tyreMat);
       tyre.rotation.z = Math.PI / 2;
       tyre.castShadow = true;
       tyre.receiveShadow = true;
       wheelGroup.add(tyre);
 
-      const hubDisc = new THREE.Mesh(hubDiscGeo, hubMat);
+      var hubDisc = new THREE.Mesh(hubDiscGeo, hubMat);
       hubDisc.rotation.z = Math.PI / 2;
-      hubDisc.position.z = -0.44;
+      hubDisc.position.z = -0.36;
       wheelGroup.add(hubDisc);
+
+      var hubInner = new THREE.Mesh(hubInnerGeo, tyreMat);
+      hubInner.rotation.z = Math.PI / 2;
+      hubInner.position.z = -0.42;
+      wheelGroup.add(hubInner);
 
       wheelGroup.position.set(pos.x, wr, pos.z);
       group.add(wheelGroup);
       wheelMeshes.push(tyre);
     }
 
-    // --- Headlights ---
-    const hlGeo = new THREE.BoxGeometry(0.4, 0.2, 0.7);
-    const hlMat = createHeadlightMaterial();
-    const headlightL = new THREE.Mesh(hlGeo, hlMat);
-    headlightL.position.set(cl / 2 - 0.15, bodyH * 0.55, cw * 0.3);
-    group.add(headlightL);
-    const headlightR = new THREE.Mesh(hlGeo, hlMat);
-    headlightR.position.set(cl / 2 - 0.15, bodyH * 0.55, -cw * 0.3);
-    group.add(headlightR);
-
-    // --- Taillights ---
-    const tlGeo = new THREE.BoxGeometry(0.35, 0.18, 0.55);
-    const tlMat = createTaillightMaterial();
-    const taillightL = new THREE.Mesh(tlGeo, tlMat);
-    taillightL.position.set(-cl / 2 + 0.15, bodyH * 0.55, cw * 0.3);
-    group.add(taillightL);
-    const taillightR = new THREE.Mesh(tlGeo, tlMat);
-    taillightR.position.set(-cl / 2 + 0.15, bodyH * 0.55, -cw * 0.3);
-    group.add(taillightR);
-
-    // --- Police lightbar (small, thin) ---
-    const lightbarMeshes = [];
+    // --- Police lightbar (small, thin, red/blue halves) ---
+    var lightbarMeshes = [];
     if (isPolice) {
-      const barH = 0.12;
-      const barW = cabW * 0.5;
-      const barL = cabL * 0.85;
-      const halfBarL = barL / 2;
-      const barY = cabY + cabinH / 2 + barH / 2;
+      var barH = 0.08;
+      var barW = cabW * 0.5;
+      var barL = cabL * 0.75;
+      var halfBarL = barL / 2;
+      var barY = cabY + cabinH / 2 + 0.1;
 
-      const barGeoRed = new THREE.BoxGeometry(halfBarL, barH, barW);
-      const barMatRed = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-      const barRed = new THREE.Mesh(barGeoRed, barMatRed);
+      var barGeoRed = new THREE.BoxGeometry(halfBarL, barH, barW);
+      var barMatRed = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      var barRed = new THREE.Mesh(barGeoRed, barMatRed);
       barRed.position.set(halfBarL / 2, barY, cabZ);
       group.add(barRed);
       lightbarMeshes.push(barRed);
 
-      const barGeoBlue = new THREE.BoxGeometry(halfBarL, barH, barW);
-      const barMatBlue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-      const barBlue = new THREE.Mesh(barGeoBlue, barMatBlue);
+      var barGeoBlue = new THREE.BoxGeometry(halfBarL, barH, barW);
+      var barMatBlue = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+      var barBlue = new THREE.Mesh(barGeoBlue, barMatBlue);
       barBlue.position.set(-halfBarL / 2, barY, cabZ);
       group.add(barBlue);
       lightbarMeshes.push(barBlue);
     }
 
     // --- Side mirrors ---
-    const mirrorGeo = new THREE.BoxGeometry(0.12, 0.15, 0.08);
-    const mirrorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a2e, specular: 0x333333, shininess: 30 });
-    const mirrorL = new THREE.Mesh(mirrorGeo, mirrorMat);
+    var mirrorGeo = new THREE.BoxGeometry(0.12, 0.15, 0.08);
+    var mirrorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a2e, specular: 0x333333, shininess: 30 });
+    var mirrorL = new THREE.Mesh(mirrorGeo, mirrorMat);
     mirrorL.position.set(cl * 0.06, cabY - cabinH * 0.1, cw / 2 - 0.25);
     group.add(mirrorL);
-    const mirrorR = new THREE.Mesh(mirrorGeo, mirrorMat);
+    var mirrorR = new THREE.Mesh(mirrorGeo, mirrorMat);
     mirrorR.position.set(cl * 0.06, cabY - cabinH * 0.1, -(cw / 2 - 0.25));
     group.add(mirrorR);
 
@@ -238,7 +286,7 @@ export function createVehicles(world3d, random, audio) {
     group.rotation.y = angle;
     world3d.scene.add(group);
 
-    const car = {
+    var car = {
       type: type,
       mesh: group,
       x: x,
@@ -682,7 +730,7 @@ export function createVehicles(world3d, random, audio) {
       });
       var fireGeo = new THREE.PlaneGeometry(2, 2);
       car.flamesMesh = new THREE.Mesh(fireGeo, fireMat);
-      car.flamesMesh.position.y = MESH.carBodyH * 0.8;
+      car.flamesMesh.position.y = MESH.wheelRadius + MESH.carBodyH * 0.65;
       car.mesh.add(car.flamesMesh);
     }
     if (healthPct < 0.5 && !car.damageSmoke) {
@@ -697,7 +745,7 @@ export function createVehicles(world3d, random, audio) {
       });
       var smokeGeo = new THREE.PlaneGeometry(2, 2);
       car.smokeMesh = new THREE.Mesh(smokeGeo, smokeMat);
-      car.smokeMesh.position.y = MESH.carBodyH * 0.5;
+      car.smokeMesh.position.y = MESH.wheelRadius + MESH.carBodyH * 0.35;
       car.mesh.add(car.smokeMesh);
     }
   }
@@ -887,10 +935,10 @@ export function createVehicles(world3d, random, audio) {
     }
 
     if (car.damageSmoke && car.smokeMesh) {
-      car.smokeMesh.position.y = MESH.carBodyH * 0.5 + Math.sin(Date.now() * 0.01) * 0.2;
+      car.smokeMesh.position.y = MESH.wheelRadius + MESH.carBodyH * 0.35 + Math.sin(Date.now() * 0.01) * 0.2;
     }
     if (car.flamesMesh) {
-      car.flamesMesh.position.y = MESH.carBodyH * 0.8 + Math.sin(Date.now() * 0.02) * 0.3;
+      car.flamesMesh.position.y = MESH.wheelRadius + MESH.carBodyH * 0.65 + Math.sin(Date.now() * 0.02) * 0.3;
     }
   }
 

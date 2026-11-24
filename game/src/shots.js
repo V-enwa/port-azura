@@ -294,7 +294,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    numSteps = 5;
+    numSteps = 185;
 
     var car = vehicles.createCar('sports', 200, 64, 0, false);
     if (car) {
@@ -375,25 +375,24 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
 
     // Traffic cars directly on the road at z=320, staggered ahead for depth
-    var traffic1 = vehicles.createCar('taxi', driveCarX + 14, driveRoadZ, driveHeading, false);
+    var traffic1 = vehicles.createCar('taxi', driveCarX + 16, driveRoadZ - 3, driveHeading, false);
     if (traffic1) { traffic1.speed = 14; traffic1.aiSpeed = 20; }
 
-    var traffic2 = vehicles.createCar('comet', driveCarX + 28, driveRoadZ, driveHeading, false);
+    var traffic2 = vehicles.createCar('comet', driveCarX + 32, driveRoadZ + 2, driveHeading, false);
     if (traffic2) { traffic2.speed = 16; traffic2.aiSpeed = 22; }
 
-    var traffic3 = vehicles.createCar('sports', driveCarX + 42, driveRoadZ, driveHeading, false);
+    var traffic3 = vehicles.createCar('sports', driveCarX + 50, driveRoadZ - 1, driveHeading, false);
     if (traffic3) { traffic3.speed = 12; traffic3.aiSpeed = 18; }
 
-    // Oncoming truck on the opposite lane (z=308, ~12m south)
-    var oncoming = vehicles.createCar('truck', driveCarX + 30, driveRoadZ - 12, driveHeading + Math.PI, false);
+    // Oncoming truck on the opposite lane (south side)
+    var oncoming = vehicles.createCar('truck', driveCarX + 35, driveRoadZ - 13, driveHeading + Math.PI, false);
     if (oncoming) { oncoming.speed = 8; oncoming.aiSpeed = 14; }
 
-    // Palm trees lining the boulevard — avoid top-right corner intrusion
+    // Palm trees lining the boulevard — avoid top-right corner intrusion by staying south
     var palmPositions = [
-      { x: 85, z: 326 }, { x: 95, z: 326 }, { x: 105, z: 326 },
-      { x: 140, z: 326 }, { x: 155, z: 326 },
-      { x: 88, z: 314 }, { x: 100, z: 314 },
-      // Removed (145, 314) which intrudes top-right corner
+      { x: 85, z: 330 }, { x: 95, z: 330 }, { x: 105, z: 330 },
+      { x: 150, z: 330 }, { x: 165, z: 330 },
+      { x: 88, z: 308 }, { x: 100, z: 308 },
     ];
     for (var pi = 0; pi < palmPositions.length; pi++) {
       var pp = palmPositions[pi];
@@ -450,6 +449,9 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
   // Run simulation
   for (let i = 0; i < numSteps; i++) {
+    if (name === 'chase') {
+      fakeInput.moveY = function() { return 0; };
+    }
     if (name === 'mission' && i % 30 === 0) {
       var missionRef = missions.activeMission;
       var nearest = null;
@@ -485,22 +487,158 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     simulateStep(dt, gameModules, fakeInput);
   }
 
-// --- POST-SIMULATION: cinematic chase standoff ---
+// --- POST-SIMULATION: cinematic chase standoff with frustum verification ---
   if (name === 'chase' && vehicles.playerCar) {
     var pc = vehicles.playerCar;
 
-    // Lock player car at standoff position on horizontal road z=64, heading east
-    pc.x = 200;
-    pc.z = 64;
-    pc.angle = 0;
-    pc.mesh.position.x = 200;
-    pc.mesh.position.z = 64;
-    pc.mesh.rotation.y = 0;
-    pc.speed = 0;
-    pc.aiSpeed = 0;
-    player.player.x = 200;
-    player.player.z = 64;
-    player.player.angle = 0;
+    // --- Frustum projection helper (pixel-space bounding rect for a subject) ---
+    function projectSubject(points3d) {
+      var minX = Infinity, maxX = -Infinity;
+      var minY = Infinity, maxY = -Infinity;
+      var allInFront = true;
+      for (var pi = 0; pi < points3d.length; pi++) {
+        var wp = points3d[pi];
+        var v = new THREE.Vector3(wp.x, wp.y, wp.z);
+        v.project(camera);
+        if (v.z >= 1) { allInFront = false; }
+        var sx = (v.x * 0.5 + 0.5) * 1280;
+        var sy = (-v.y * 0.5 + 0.5) * 720;
+        if (sx < minX) minX = sx;
+        if (sx > maxX) maxX = sx;
+        if (sy < minY) minY = sy;
+        if (sy > maxY) maxY = sy;
+      }
+      return {
+        minX: minX, maxX: maxX, minY: minY, maxY: maxY,
+        width: maxX - minX, height: maxY - minY,
+        inFront: allInFront,
+        inside: (minX >= 0 && maxX <= 1280 && minY >= 0 && maxY <= 720),
+      };
+    }
+
+    function carCorners(cx, cz, cangle, clen, cwid, topY) {
+      var cos = Math.cos(cangle), sin = Math.sin(cangle);
+      var hl = clen / 2, hw = cwid / 2;
+      var corners = [];
+      for (var yi = 0; yi < 2; yi++) {
+        var yv = yi === 0 ? 0 : topY;
+        for (var xi = -1; xi <= 1; xi += 2) {
+          for (var zi = -1; zi <= 1; zi += 2) {
+            corners.push({
+              x: cx + cos * (xi * hl) - sin * (zi * hw),
+              y: yv,
+              z: cz + sin * (xi * hl) + cos * (zi * hw),
+            });
+          }
+        }
+      }
+      return corners;
+    }
+
+    function heliCorners(hx, hy, hz) {
+      var hw = 2.8, hl = 3.8, hh = 4.5;
+      var corners = [];
+      for (var xi = -1; xi <= 1; xi += 2) {
+        for (var yi = 0; yi < 2; yi++) {
+          for (var zi = -1; zi <= 1; zi += 2) {
+            corners.push({
+              x: hx + xi * hw,
+              y: hy + (yi === 0 ? -0.5 : 0) + yi * hh,
+              z: hz + zi * hl,
+            });
+          }
+        }
+      }
+      return corners;
+    }
+
+    // --- Set up candidate positions ---
+    var heroX = 198, heroZ = 64, heroAng = 0;
+    var crusX = 194, crusZ = 50, crusAng = Math.PI;
+    var heliX = 180, heliY = 8, heliZ = 66;
+    var camPos = { x: 214, y: 5.5, z: 77 };
+    var camLook = { x: 196, y: 1.8, z: 62 };
+
+    // Iterative position tuning via frustum projection
+    var maxIter = 6;
+    var heroBox = null, crusBox = null, heliBox = null;
+    var heliDimOk = false, overlapOk = false;
+
+    for (var iter = 0; iter < maxIter; iter++) {
+      // Place subjects
+      pc.x = heroX; pc.z = heroZ; pc.angle = heroAng;
+      pc.mesh.position.x = heroX; pc.mesh.position.z = heroZ; pc.mesh.rotation.y = heroAng;
+      pc.speed = 0; pc.aiSpeed = 0;
+      player.player.x = heroX; player.player.z = heroZ; player.player.angle = heroAng;
+
+      if (police.policeCars.length > 0) {
+        var cr = police.policeCars[0];
+        cr.x = crusX; cr.z = crusZ; cr.angle = crusAng;
+        cr.mesh.position.x = crusX; cr.mesh.position.z = crusZ; cr.mesh.rotation.y = crusAng;
+        cr.speed = 0; cr.aiSpeed = 0; cr.sirenOn = true; cr.isPursuitCar = true;
+        if (cr.lightbarMeshes) { for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) { cr.lightbarMeshes[lb].visible = true; } }
+      }
+
+      if (police.helicopter && police.helicopter.mesh) {
+        var hm = police.helicopter.mesh;
+        hm.position.set(heliX, heliY, heliZ);
+        hm.rotation.y = -0.35;
+      }
+
+      camera.position.set(camPos.x, camPos.y, camPos.z);
+      camera.lookAt(camLook.x, camLook.y, camLook.z);
+
+      // Project
+      heroBox = projectSubject(carCorners(heroX, heroZ, heroAng, MESH.carLength, MESH.carWidth, MESH.wheelRadius + MESH.carBodyH + MESH.cabinH));
+      crusBox = projectSubject(carCorners(crusX, crusZ, crusAng, MESH.carLength, MESH.carWidth, MESH.wheelRadius + MESH.carBodyH + MESH.cabinH));
+
+      if (police.helicopter) {
+        heliBox = projectSubject(heliCorners(heliX, heliY, heliZ));
+      }
+
+      // Check assertions
+      var heroOk = heroBox.inside && heroBox.inFront && heroBox.width > 120;
+      var crusOk = crusBox.inside && crusBox.inFront && crusBox.width > 60;
+      var heliOk = heliBox && heliBox.inside && heliBox.inFront &&
+        heliBox.minX >= 40 && heliBox.maxX <= 1240 &&
+        heliBox.minY >= 40 && heliBox.maxY <= 680 &&
+        Math.max(heliBox.width, heliBox.height) >= 90 &&
+        Math.max(heliBox.width, heliBox.height) <= 220;
+
+      // Non-overlap: hero and cruiser boxes don't intersect
+      var boxesOverlap = !(heroBox.maxX < crusBox.minX || crusBox.maxX < heroBox.minX ||
+                           heroBox.maxY < crusBox.minY || crusBox.maxY < heroBox.minY);
+
+      if (heroOk && crusOk && heliOk && !boxesOverlap) {
+        // All assertions pass
+        heliDimOk = true;
+        overlapOk = true;
+        break;
+      }
+
+      // Adjust positions for next iteration
+      if (!heroOk) {
+        // Move camera to better frame hero
+        camPos.y += 0.3;
+        camLook.x += (heroX - camLook.x) * 0.15;
+        camLook.z += (heroZ - camLook.z) * 0.15;
+      }
+      if (!crusOk || boxesOverlap) {
+        // Push cruiser further from hero
+        crusZ -= 1.5;
+        crusX += (heroX - crusX) * 0.1;
+      }
+      if (!heliOk) {
+        heliY -= 1;
+        heliZ += (camLook.z - heliZ) * 0.1;
+      }
+    }
+
+    // Lock final positions
+    pc.x = heroX; pc.z = heroZ; pc.angle = heroAng;
+    pc.mesh.position.x = heroX; pc.mesh.position.z = heroZ; pc.mesh.rotation.y = heroAng;
+    pc.speed = 0; pc.aiSpeed = 0;
+    player.player.x = heroX; player.player.z = heroZ; player.player.angle = heroAng;
 
     // Remove excess police cars — keep 3 for dispatch panel
     for (var rci = police.policeCars.length - 1; rci >= 3; rci--) {
@@ -516,48 +654,39 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
     if (police.policeCars.length > 3) police.policeCars.length = 3;
 
-    // Position the visible pursuit cruiser ~13 m north, facing us
-    var cruiserX = 195;
-    var cruiserZ = 52;
-    var cruiserHeading = Math.PI;
     if (police.policeCars.length > 0) {
       var cr = police.policeCars[0];
-      cr.x = cruiserX;
-      cr.z = cruiserZ;
-      cr.angle = cruiserHeading;
-      cr.mesh.position.x = cruiserX;
-      cr.mesh.position.z = cruiserZ;
-      cr.mesh.rotation.y = cruiserHeading;
-      cr.speed = 0;
-      cr.aiSpeed = 0;
-      cr.sirenOn = true;
-      cr.isPursuitCar = true;
-      if (cr.lightbarMeshes) {
-        for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
-          if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
-        }
-      }
+      cr.x = crusX; cr.z = crusZ; cr.angle = crusAng;
+      cr.mesh.position.x = crusX; cr.mesh.position.z = crusZ; cr.mesh.rotation.y = crusAng;
+      cr.speed = 0; cr.aiSpeed = 0; cr.sirenOn = true; cr.isPursuitCar = true;
+      if (cr.lightbarMeshes) { for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) { cr.lightbarMeshes[lb].visible = true; } }
+    }
+
+    if (police.helicopter && police.helicopter.mesh) {
+      police.helicopter.mesh.position.set(heliX, heliY, heliZ);
+      police.helicopter.mesh.rotation.y = -0.35;
     }
 
     // Position remaining 2 police cars at distance (for dispatch panel entries)
     if (police.policeCars.length > 1) {
-      police.policeCars[1].x = 160;
-      police.policeCars[1].z = 68;
-      police.policeCars[1].mesh.position.x = 160;
-      police.policeCars[1].mesh.position.z = 68;
+      police.policeCars[1].x = 160; police.policeCars[1].z = 68;
+      police.policeCars[1].mesh.position.x = 160; police.policeCars[1].mesh.position.z = 68;
     }
     if (police.policeCars.length > 2) {
-      police.policeCars[2].x = 240;
-      police.policeCars[2].z = 58;
-      police.policeCars[2].mesh.position.x = 240;
-      police.policeCars[2].mesh.position.z = 58;
+      police.policeCars[2].x = 240; police.policeCars[2].z = 58;
+      police.policeCars[2].mesh.position.x = 240; police.policeCars[2].mesh.position.z = 58;
     }
 
-    // Position AIR-7 helicopter inside camera frame (upper portion, readable shape)
-    if (police.helicopter && police.helicopter.mesh) {
-      var hm = police.helicopter.mesh;
-      hm.position.set(185, 13, 80);
-      hm.rotation.y = -0.35;
+    // Freeze all police cars so AI doesn't move them
+    for (var pci = 0; pci < police.policeCars.length; pci++) {
+      var pcc2 = police.policeCars[pci];
+      if (pcc2 && pcc2.alive) {
+        pcc2.speed = 0; pcc2.aiSpeed = 0;
+      }
+    }
+    // Freeze helicopter AI
+    if (police.helicopter) {
+      police.helicopter.orbitSpeed = 0;
     }
 
     // Force wanted to 5 stars, heat to 7
@@ -572,6 +701,14 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     if (audio && audio.playSiren) {
       try { audio.playSiren(true); } catch (_) {}
     }
+
+    // Print pixel boxes for verification report
+    window.__chaseBoxes = {
+      hero: { minX: heroBox.minX, maxX: heroBox.maxX, minY: heroBox.minY, maxY: heroBox.maxY, w: heroBox.width, h: heroBox.height },
+      cruiser: { minX: crusBox.minX, maxX: crusBox.maxX, minY: crusBox.minY, maxY: crusBox.maxY, w: crusBox.width, h: crusBox.height },
+      helicopter: heliBox ? { minX: heliBox.minX, maxX: heliBox.maxX, minY: heliBox.minY, maxY: heliBox.maxY, w: heliBox.width, h: heliBox.height } : null,
+    };
+    console.log('CHASE PIXEL BOXES:', JSON.stringify(window.__chaseBoxes));
   }
 
   // Camera and render
@@ -586,13 +723,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    // External cinematic camera: front-quarter side, ~14 m away, 4.5 m high
-    var camX = 212;
-    var camY = 4.5;
-    var camZ = 72;
-    camera.position.set(camX, camY, camZ);
-    camera.lookAt(197, 1.5, 62);
-
+    // Camera already set by the frustum verification above — keep final position
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
   }
 
@@ -620,7 +751,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       var dcar = vehicles.playerCar;
       var dca = dcar.angle;
       var dbehindX = dcar.x - Math.cos(dca) * 10;
-      var dbehindZ = dcar.z - Math.sin(dca) * 10;
+      var dbehindZ = dcar.z - Math.sin(dca) * 10 + 3; // shift north to keep palm fronds out of top-right
       camera.position.set(dbehindX, 4.0, dbehindZ);
       camera.lookAt(dcar.x + Math.cos(dca) * 20, 1.8, dcar.z + Math.sin(dca) * 20);
     }
