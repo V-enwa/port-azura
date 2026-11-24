@@ -689,6 +689,33 @@ export function createWorld3D(random) {
           roof.castShadow = true;
           scene.add(roof);
 
+          // Emissive window planes on building walls
+          var winCount = 4 + Math.floor(random() * 5);
+          var winW = 0.3 + random() * 0.4;
+          var winH = 0.3 + random() * 0.5;
+          var winGeo = new THREE.PlaneGeometry(winW, winH);
+          var winMat = new THREE.MeshBasicMaterial({
+            color: 0xffdd88,
+            side: THREE.DoubleSide,
+          });
+          var faces = [
+            { dx: 0, dz: 1, offAxis: 'x', offRange: bw * 0.7 },
+            { dx: 1, dz: 0, offAxis: 'z', offRange: bd * 0.7 },
+          ];
+          for (var wi = 0; wi < winCount; wi++) {
+            var face = faces[wi % 2];
+            var wp = new THREE.Mesh(winGeo, winMat);
+            var off = (random() - 0.5) * face.offRange;
+            var wy = 1 + random() * (bh - 2);
+            if (face.dz === 1) {
+              wp.position.set(off, wy, bd / 2 + 0.02);
+            } else {
+              wp.position.set(bw / 2 + 0.02, wy, off);
+              wp.rotation.y = Math.PI / 2;
+            }
+            body.add(wp);
+          }
+
           collisionBoxes.push({
             minX: bx - bw / 2,
             maxX: bx + bw / 2,
@@ -1153,6 +1180,19 @@ function createStreetLamp(scene, x, z, random) {
   const glow = new THREE.Mesh(glowGeo, glowMat);
   glow.position.copy(lamp.position);
   group.add(glow);
+
+  // Ground light pool
+  const poolGeo = new THREE.CylinderGeometry(1.8, 1.8, 0.02, 12);
+  const poolMat = new THREE.MeshBasicMaterial({
+    color: 0xffcc88,
+    transparent: true,
+    opacity: 0.22,
+    side: THREE.DoubleSide,
+  });
+  const pool = new THREE.Mesh(poolGeo, poolMat);
+  pool.rotation.x = Math.PI / 2;
+  pool.position.set(2, 0.02, 0);
+  group.add(pool);
 
   group.position.set(x, 0, z);
   scene.add(group);

@@ -283,6 +283,48 @@ export function createVehicles(world3d, random, audio) {
       lightbarMeshes.push(barBlue);
     }
 
+    // --- Headlight ground pool (pale cone + pool on road ahead) ---
+    var hlPoolGeo = new THREE.CylinderGeometry(1.8, 0.3, 4, 8);
+    var hlPoolMat = new THREE.MeshBasicMaterial({
+      color: 0xffffdd,
+      transparent: true,
+      opacity: 0.12,
+      side: THREE.DoubleSide,
+    });
+    var hlPool = new THREE.Mesh(hlPoolGeo, hlPoolMat);
+    hlPool.rotation.z = Math.PI / 2;
+    hlPool.position.set(cl / 2 + 2.2, -1.8, 0);
+    group.add(hlPool);
+
+    // --- Police lightbar ground pools (faint red/blue on road beside cruiser) ---
+    var barPoolMeshes = [];
+    if (isPolice) {
+      var barPoolGeo = new THREE.CylinderGeometry(1.0, 1.0, 0.02, 10);
+      var barRedPoolMat = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.15,
+        side: THREE.DoubleSide,
+      });
+      var barBluePoolMat = new THREE.MeshBasicMaterial({
+        color: 0x0000ff,
+        transparent: true,
+        opacity: 0.15,
+        side: THREE.DoubleSide,
+      });
+      var barPoolR = new THREE.Mesh(barPoolGeo, barRedPoolMat);
+      barPoolR.rotation.x = Math.PI / 2;
+      barPoolR.position.set(0, 0.02, cw / 2 + 0.5);
+      group.add(barPoolR);
+      barPoolMeshes.push(barPoolR);
+
+      var barPoolB = new THREE.Mesh(barPoolGeo.clone(), barBluePoolMat);
+      barPoolB.rotation.x = Math.PI / 2;
+      barPoolB.position.set(0, 0.02, -(cw / 2 + 0.5));
+      group.add(barPoolB);
+      barPoolMeshes.push(barPoolB);
+    }
+
     // --- Side mirrors ---
     var mirrorGeo = new THREE.BoxGeometry(0.12, 0.15, 0.08);
     var mirrorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a2e, specular: 0x333333, shininess: 30 });
@@ -323,8 +365,9 @@ export function createVehicles(world3d, random, audio) {
       isPolice: isPolice,
       sirenOn: false,
       lightbarMeshes: lightbarMeshes,
-      headlightGlow: null,
+      headlightGlow: hlPool,
       taillightGlow: null,
+      barPoolMeshes: barPoolMeshes,
       wheelMeshes: wheelMeshes,
       damageSmoke: false,
       parked: parked || false,

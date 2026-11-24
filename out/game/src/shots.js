@@ -688,7 +688,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     // --- Set up candidate positions ---
     var heroX = 198, heroZ = 64, heroAng = 0;
     var crusX = 194, crusZ = 50, crusAng = Math.PI;
-    var heliX = 180, heliY = 10.5, heliZ = 66;
+    var heliX = 172, heliY = 18, heliZ = 74;
     var camPos = { x: 214, y: 5.5, z: 77 };
     var camLook = { x: 196, y: 1.8, z: 62 };
 
@@ -733,8 +733,8 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       var heroOk = heroBox.inside && heroBox.inFront && heroBox.width > 120;
       var crusOk = crusBox.inside && crusBox.inFront && crusBox.width > 60;
       var heliOk = heliBox && heliBox.inside && heliBox.inFront &&
-        heliBox.minX >= 40 && heliBox.maxX <= 1240 &&
-        heliBox.minY >= 40 && heliBox.maxY <= 680 &&
+        heliBox.minX >= 20 && heliBox.maxX <= 600 &&
+        heliBox.minY >= 20 && heliBox.maxY <= 340 &&
         Math.max(heliBox.width, heliBox.height) >= 90 &&
         Math.max(heliBox.width, heliBox.height) <= 220;
 
@@ -798,6 +798,40 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     if (police.helicopter && police.helicopter.mesh) {
       police.helicopter.mesh.position.set(heliX, heliY, heliZ);
       police.helicopter.mesh.rotation.y = -0.35;
+
+      // Scale cone to reach the ground from helicopter belly
+      if (police.helicopter.cone) {
+        var bellyOffset = 0.6;
+        var coneNeededHeight = heliY - bellyOffset;
+        police.helicopter.cone.scale.y = coneNeededHeight / 10;
+        police.helicopter.cone.position.y = -(heliY - bellyOffset) / 2;
+      }
+
+      // Point spotlight target at hero car
+      if (police.helicopter.spotLight && police.helicopter.spotLight.target) {
+        police.helicopter.spotLight.target.position.set(heroX - heliX, -heliY, heroZ - heliZ);
+      }
+
+      // Ground light pool at cone base
+      if (!police.helicopter.groundPool) {
+        var poolGeo = new THREE.CylinderGeometry(5, 5, 0.02, 16);
+        var poolMat = new THREE.MeshBasicMaterial({
+          color: 0xffffcc,
+          transparent: true,
+          opacity: 0.35,
+          side: THREE.DoubleSide,
+        });
+        police.helicopter.groundPool = new THREE.Mesh(poolGeo, poolMat);
+        police.helicopter.groundPool.rotation.x = Math.PI / 2;
+        scene.add(police.helicopter.groundPool);
+      }
+      var coneCenterOffsetZ = 2;
+      var cosH = Math.cos(-0.35);
+      var sinH = Math.sin(-0.35);
+      var poolWorldX = heliX - sinH * coneCenterOffsetZ;
+      var poolWorldZ = heliZ + cosH * coneCenterOffsetZ;
+      police.helicopter.groundPool.position.set(poolWorldX, 0.03, poolWorldZ);
+      police.helicopter.groundPool.visible = true;
     }
 
     // Position remaining 2 police cars at distance (for dispatch panel entries)

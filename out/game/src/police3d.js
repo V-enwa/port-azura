@@ -264,7 +264,10 @@ export function createPolice(world3d, vehicles, random, audio) {
 
     var heliGroup = new THREE.Group();
 
-    var bodyMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
+    var bodyMat = new THREE.MeshPhongMaterial({ color: 0xd8d8e0, specular: 0xcccccc, shininess: 30 });
+    var blueStripeMat = new THREE.MeshPhongMaterial({ color: 0x0033aa, specular: 0x224488, shininess: 25 });
+    var bellyMat = new THREE.MeshPhongMaterial({ color: 0x333333, specular: 0x111111, shininess: 15 });
+    var finMat = new THREE.MeshPhongMaterial({ color: 0x0033aa, specular: 0x224488, shininess: 25 });
 
     // Fuselage
     var bodyGeo = new THREE.BoxGeometry(1.5, 1.0, 4.5);
@@ -272,6 +275,20 @@ export function createPolice(world3d, vehicles, random, audio) {
     body.position.y = 0.6;
     body.castShadow = true;
     heliGroup.add(body);
+
+    // Blue stripe along fuselage sides
+    var stripeGeo = new THREE.BoxGeometry(0.04, 0.25, 3.8);
+    for (var str = -1; str <= 1; str += 2) {
+      var stripe = new THREE.Mesh(stripeGeo, blueStripeMat);
+      stripe.position.set(str * 0.75, 0.6, 0.2);
+      heliGroup.add(stripe);
+    }
+
+    // Dark belly
+    var bellyGeo = new THREE.BoxGeometry(1.2, 0.12, 4.0);
+    var belly = new THREE.Mesh(bellyGeo, bellyMat);
+    belly.position.set(0, 0.12, 0);
+    heliGroup.add(belly);
 
     // Nose
     var noseGeo = new THREE.CylinderGeometry(0.1, 0.65, 1.2, 8);
@@ -298,22 +315,22 @@ export function createPolice(world3d, vehicles, random, audio) {
     tailBoom.castShadow = true;
     heliGroup.add(tailBoom);
 
-    // Tail fin - horizontal stabilizer
+    // Tail fin - horizontal stabilizer (blue)
     var stabGeo = new THREE.BoxGeometry(0.12, 0.15, 1.5);
-    var stab = new THREE.Mesh(stabGeo, bodyMat);
+    var stab = new THREE.Mesh(stabGeo, finMat);
     stab.position.set(0, 0.3, -4.0);
     heliGroup.add(stab);
 
-    // Vertical fin
+    // Vertical fin (blue)
     var vFinGeo = new THREE.BoxGeometry(0.12, 0.7, 0.5);
-    var vFin = new THREE.Mesh(vFinGeo, bodyMat);
+    var vFin = new THREE.Mesh(vFinGeo, finMat);
     vFin.position.set(0, 0.55, -4.0);
     heliGroup.add(vFin);
 
     // Tail rotor
     var tailRotorGroup = new THREE.Group();
     var tailBladeGeo = new THREE.BoxGeometry(0.06, 0.04, 1.2);
-    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
     var tb1 = new THREE.Mesh(tailBladeGeo, bladeMat);
     tailRotorGroup.add(tb1);
     var tb2 = new THREE.Mesh(tailBladeGeo, bladeMat);
@@ -322,13 +339,40 @@ export function createPolice(world3d, vehicles, random, audio) {
     tailRotorGroup.position.set(0.25, 0.3, -4.2);
     heliGroup.add(tailRotorGroup);
 
+    // Nav lights
+    var navLightGeo = new THREE.SphereGeometry(0.1, 6, 6);
+    var navRedMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    var navGreenMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    var navWhiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    var navRed = new THREE.Mesh(navLightGeo, navRedMat);
+    navRed.position.set(0, 0.45, -4.4);
+    heliGroup.add(navRed);
+
+    var navGreen = new THREE.Mesh(navLightGeo, navGreenMat);
+    navGreen.position.set(0.7, 0.45, -1.0);
+    heliGroup.add(navGreen);
+
+    var navWhite = new THREE.Mesh(navLightGeo, navWhiteMat);
+    navWhite.position.set(-0.7, 0.45, -1.0);
+    heliGroup.add(navWhite);
+
+    var strobeTop = new THREE.Mesh(navLightGeo, navWhiteMat);
+    strobeTop.position.set(0, 1.45, 0);
+    heliGroup.add(strobeTop);
+
+    var beaconGeo = new THREE.SphereGeometry(0.12, 6, 6);
+    var beaconRedMat = new THREE.MeshBasicMaterial({ color: 0xff2200 });
+    var beaconRed = new THREE.Mesh(beaconGeo, beaconRedMat);
+    beaconRed.position.set(0, -0.05, -4.0);
+    heliGroup.add(beaconRed);
+
     // Main rotor system
     var rotorGroup = new THREE.Group();
     rotorGroup.position.y = 1.25;
 
-    // Rotor blades (2 long blades)
     var mainBladeGeo = new THREE.BoxGeometry(0.12, 0.04, 3.0);
-    var mainBladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+    var mainBladeMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
     var mb1 = new THREE.Mesh(mainBladeGeo, mainBladeMat);
     mb1.position.set(0, 0, 0);
     rotorGroup.add(mb1);
@@ -337,7 +381,6 @@ export function createPolice(world3d, vehicles, random, audio) {
     mb2.position.set(0, 0, 0);
     rotorGroup.add(mb2);
 
-    // Rotor disc (translucent blur disc for visibility)
     var discGeo = new THREE.CylinderGeometry(2.8, 2.8, 0.03, 32);
     var discMat = new THREE.MeshBasicMaterial({
       color: 0x888888,
@@ -349,7 +392,6 @@ export function createPolice(world3d, vehicles, random, audio) {
     disc.position.set(0, 0, 0);
     rotorGroup.add(disc);
 
-    // Top rotor hub
     var hubGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
     var hubMesh = new THREE.Mesh(hubGeo, new THREE.MeshPhongMaterial({ color: 0x666666 }));
     hubMesh.position.y = 0.05;
@@ -358,7 +400,7 @@ export function createPolice(world3d, vehicles, random, audio) {
     heliGroup.add(rotorGroup);
 
     // Skids
-    var skidMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    var skidMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
     for (var s = -1; s <= 1; s += 2) {
       var skidGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
       var skid = new THREE.Mesh(skidGeo, skidMat);
@@ -379,18 +421,18 @@ export function createPolice(world3d, vehicles, random, audio) {
     }
 
     // Spotlight
-    var spotLight = new THREE.SpotLight(0xffffaa, 2, 60, Math.PI / 6, 0.3);
+    var spotLight = new THREE.SpotLight(0xffffcc, 2.5, 80, Math.PI / 6, 0.3);
     spotLight.position.set(0, -0.6, 1.5);
     spotLight.target.position.set(0, -10, 5);
     heliGroup.add(spotLight);
     heliGroup.add(spotLight.target);
 
     // Spotlight cone
-    var coneGeo = new THREE.CylinderGeometry(0.1, 4, 10, 8, 1);
+    var coneGeo = new THREE.CylinderGeometry(0.1, 4.5, 10, 8, 1);
     var coneMat = new THREE.MeshBasicMaterial({
-      color: 0xffffaa,
+      color: 0xffffcc,
       transparent: true,
-      opacity: 0.06,
+      opacity: 0.18,
       side: THREE.DoubleSide,
     });
     var cone = new THREE.Mesh(coneGeo, coneMat);
@@ -413,6 +455,8 @@ export function createPolice(world3d, vehicles, random, audio) {
       orbitAngle: random.angle(),
       orbitRadius: 25 + random.float(0, 15),
       orbitSpeed: POLICE.heliSpeed * 0.3,
+      cone: cone,
+      spotLight: spotLight,
     };
   }
 
