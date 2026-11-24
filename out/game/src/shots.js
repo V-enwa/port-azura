@@ -149,6 +149,130 @@ function createFakeInput() {
   };
 }
 
+function createCobraEnemy(scene, id, color) {
+  var eg = new THREE.Group();
+  var skinMat = new THREE.MeshPhongMaterial({ color: 0xd4a574 });
+  var shirtMat = new THREE.MeshPhongMaterial({ color: color || 0xff3333 });
+  var pantsMat = new THREE.MeshPhongMaterial({ color: 0x222244 });
+  var headGeo = new THREE.SphereGeometry(0.25, 6, 4);
+  var head = new THREE.Mesh(headGeo, skinMat);
+  head.position.y = 1.5;
+  head.castShadow = true;
+  eg.add(head);
+  var torsoGeo = new THREE.BoxGeometry(0.6, 1.0, 0.3);
+  var torso = new THREE.Mesh(torsoGeo, shirtMat);
+  torso.position.y = 0.8;
+  torso.castShadow = true;
+  eg.add(torso);
+  var armGeo = new THREE.BoxGeometry(0.15, 0.7, 0.15);
+  var leftArm = new THREE.Mesh(armGeo, shirtMat);
+  leftArm.position.set(0.35, 1.0, 0);
+  eg.add(leftArm);
+  var rightArm = new THREE.Mesh(armGeo, shirtMat);
+  rightArm.position.set(-0.35, 1.0, 0);
+  eg.add(rightArm);
+  var legGeo = new THREE.BoxGeometry(0.22, 0.8, 0.22);
+  var leftLeg = new THREE.Mesh(legGeo, pantsMat);
+  leftLeg.position.set(0.12, -0.2, 0);
+  eg.add(leftLeg);
+  var rightLeg = new THREE.Mesh(legGeo, pantsMat);
+  rightLeg.position.set(-0.12, -0.2, 0);
+  eg.add(rightLeg);
+  var gunGeo = new THREE.BoxGeometry(0.08, 0.08, 0.5);
+  var gunMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+  var gun = new THREE.Mesh(gunGeo, gunMat);
+  gun.position.set(0.35, 1.0, 0.2);
+  eg.add(gun);
+
+  scene.add(eg);
+
+  return {
+    mesh: eg,
+    x: 0,
+    z: 0,
+    health: 999,
+    alive: true,
+    shootTimer: 0.5 + Math.random() * 0.8,
+  };
+}
+
+function createYellowTracer(scene, fromX, fromY, fromZ, toX, toY, toZ) {
+  var dx = toX - fromX;
+  var dy = toY - fromY;
+  var dz = toZ - fromZ;
+  var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (dist < 0.01) return null;
+
+  var group = new THREE.Group();
+  group.position.set(fromX, fromY, fromZ);
+  var angleXZ = Math.atan2(dz, dx);
+  var horizDist = Math.sqrt(dx * dx + dz * dz);
+  var angleVert = Math.atan2(dy, horizDist);
+  group.rotation.y = -angleXZ + Math.PI / 2;
+  group.rotation.z = -angleVert;
+
+  var tailLen = dist * 0.85;
+  var headLen = dist * 0.15;
+
+  // Tapered streak body
+  var streakGeo = new THREE.CylinderGeometry(0.015, 0.045, tailLen, 6, 1);
+  var streakMat = new THREE.MeshBasicMaterial({ color: 0xffff44, transparent: true, opacity: 0.85 });
+  var streak = new THREE.Mesh(streakGeo, streakMat);
+  streak.rotation.x = Math.PI / 2;
+  streak.position.set(0, 0, tailLen / 2);
+  group.add(streak);
+
+  // Bright head
+  var headGeo = new THREE.SphereGeometry(0.06, 4, 4);
+  var headMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  var headMesh = new THREE.Mesh(headGeo, headMat);
+  headMesh.position.set(0, 0, dist);
+  group.add(headMesh);
+
+  // Glow sphere at head
+  var glowGeo = new THREE.SphereGeometry(0.1, 4, 4);
+  var glowMat = new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.5 });
+  var glow = new THREE.Mesh(glowGeo, glowMat);
+  glow.position.set(0, 0, dist);
+  group.add(glow);
+
+  scene.add(group);
+  return group;
+}
+
+function createOrangeTracer(scene, fromX, fromY, fromZ, toX, toY, toZ) {
+  var dx = toX - fromX;
+  var dy = toY - fromY;
+  var dz = toZ - fromZ;
+  var dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  if (dist < 0.01) return null;
+
+  var group = new THREE.Group();
+  group.position.set(fromX, fromY, fromZ);
+  var angleXZ = Math.atan2(dz, dx);
+  var horizDist = Math.sqrt(dx * dx + dz * dz);
+  var angleVert = Math.atan2(dy, horizDist);
+  group.rotation.y = -angleXZ + Math.PI / 2;
+  group.rotation.z = -angleVert;
+
+  var tailLen = dist * 0.85;
+  var streakGeo = new THREE.CylinderGeometry(0.012, 0.035, tailLen, 6, 1);
+  var streakMat = new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0.55 });
+  var streak = new THREE.Mesh(streakGeo, streakMat);
+  streak.rotation.x = Math.PI / 2;
+  streak.position.set(0, 0, tailLen / 2);
+  group.add(streak);
+
+  var headGeo = new THREE.SphereGeometry(0.04, 4, 4);
+  var headMat = new THREE.MeshBasicMaterial({ color: 0xffcc66 });
+  var headMesh = new THREE.Mesh(headGeo, headMat);
+  headMesh.position.set(0, 0, dist);
+  group.add(headMesh);
+
+  scene.add(group);
+  return group;
+}
+
 function simulateStep(dt, gameModules, fakeInput) {
   const { player, vehicles, pedestrians, police, combat, missions, world3d } = gameModules;
   const pos = player.getPlayerPosition();
@@ -330,6 +454,9 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   const rng = createRandom(seed);
   const fakeInput = createFakeInput();
 
+  var missionEnemies = [];
+  var missionEnemyCar = null;
+
   player.player.health = 100;
   player.player.armour = 0;
   player.player.cash = 500;
@@ -361,6 +488,9 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     player.setPlayerPosition(PLACES.casino.x, PLACES.casino.z, -Math.PI / 2);
 
     adjustDuskLighting(scene);
+
+    police.wantedHeat = 3;
+    police.wantedLevel = 3;
 
     const roads = findCasinoRowRoads(world3d);
     const nearbyRoads = roads.length > 0 ? roads : world3d.roads;
@@ -434,63 +564,63 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   if (name === 'mission') {
     numSteps = 180;
 
-    // Player in front of Coral Fin, facing east down the street
     var missionPX = 0;
     var missionPZ = 64;
-    var missionHeading = 0; // east (+x)
+    var missionHeading = 0;
     player.setPlayerPosition(missionPX, missionPZ, missionHeading);
     combat.switchWeapon(2);
+    player.setFiringPose();
+    player.createMuzzleFlashPermanent();
 
-    var mission = missions.startMission(4);
-    if (mission) {
+    var flashPos = player.getMuzzleFlashPos();
+    if (flashPos) {
+      var flashGeo2 = new THREE.SphereGeometry(0.18, 8, 8);
+      var flashMat2 = new THREE.MeshBasicMaterial({ color: 0xffee44, transparent: true, opacity: 0.9 });
+      var permFlash = new THREE.Mesh(flashGeo2, flashMat2);
+      permFlash.position.copy(flashPos);
+      scene.add(permFlash);
+    }
+
+    if (missions.showDialogue) {
       missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
     }
 
-    if (mission && mission.enemies) {
-      var cosH = Math.cos(missionHeading);
-      var sinH = Math.sin(missionHeading);
-
-      // Enemies placed directly in front of player, 6-10 m ahead, in camera view
-      var enemyDefs = [
-        { forward: 7,  lateral: -2.5 },
-        { forward: 8,  lateral: 1.5 },
-        { forward: 10, lateral: -0.5 },
-      ];
-
-      for (var ei = 0; ei < mission.enemies.length; ei++) {
-        var e = mission.enemies[ei];
-        if (ei < 3) {
-          var def = enemyDefs[ei];
-          var ex = missionPX + cosH * def.forward + sinH * def.lateral;
-          var ez = missionPZ + sinH * def.forward - cosH * def.lateral;
-          e.x = ex;
-          e.z = ez;
-          e.health = 999; // survive sim
-          if (e.mesh) {
-            e.mesh.position.x = ex;
-            e.mesh.position.z = ez;
-          }
-        } else {
-          e.alive = false;
-          if (e.mesh && e.mesh.parent) {
-            scene.remove(e.mesh);
-          }
-        }
-      }
+    // Enemy Cobra car across the street (east of player, facing west toward player)
+    var cobraCarX = missionPX + 14;
+    var cobraCarZ = missionPZ + 4;
+    var cobraCar = vehicles.createCar('comet', cobraCarX, cobraCarZ, Math.PI, false);
+    if (cobraCar) {
+      cobraCar.parked = true;
+      cobraCar.speed = 0;
+      cobraCar.aiSpeed = 0;
+      missionEnemyCar = cobraCar;
     }
 
-    // Parked car + pedestrians for fuller frame
-    var parkedSedan = vehicles.createCar('sedan', missionPX + 16, missionPZ - 3, 0, false);
-    if (parkedSedan) {
-      parkedSedan.parked = true;
-      parkedSedan.speed = 0;
-      parkedSedan.aiSpeed = 0;
-    }
+    // Two Cobra enemies staged near their car
+    var e1 = createCobraEnemy(scene, 'enemy_m1', 0xff3333);
+    e1.x = cobraCarX + 2;
+    e1.z = cobraCarZ - 3;
+    e1.health = 999;
+    e1.mesh.position.set(e1.x, 0, e1.z);
+    e1.mesh.rotation.y = Math.atan2(missionPZ - e1.z, missionPX - e1.x);
+    missionEnemies.push(e1);
 
+    var e2 = createCobraEnemy(scene, 'enemy_m2', 0xff3333);
+    e2.x = cobraCarX - 1.5;
+    e2.z = cobraCarZ + 1;
+    e2.health = 999;
+    e2.mesh.position.set(e2.x, 0, e2.z);
+    e2.mesh.rotation.y = Math.atan2(missionPZ - e2.z, missionPX - e2.x);
+    // Lower the mesh for ducking pose behind car
+    e2.mesh.children.forEach(function(c) {
+      if (c.position && c.position.y !== undefined) c.position.y *= 0.65;
+    });
+    missionEnemies.push(e2);
+
+    // Pedestrians behind player
     var missionRoads = findRoadsNearMission(world3d);
     for (var mp = 0; mp < 2; mp++) {
       var mpos = getSidewalkPos(rng, missionRoads);
-      // Keep peds behind player or off to sides, not in front
       if (mpos.x > missionPX + 5) mpos.x = missionPX - 4 + rng.float(0, 3);
       var ped = pedestrians.createPed(mpos.x, mpos.z, rng.angle());
       if (ped) pedestrians.peds.push(ped);
@@ -602,20 +732,17 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       fakeInput.moveY = function() { return 0; };
     }
     if (name === 'mission' && i % 30 === 0) {
-      var missionRef = missions.activeMission;
       var nearest = null;
       var nearestDist = Infinity;
-      if (missionRef && missionRef.enemies) {
-        for (let j = 0; j < missionRef.enemies.length; j++) {
-          var en = missionRef.enemies[j];
-          if (!en.alive) continue;
-          var dx = en.x - player.player.x;
-          var dz = en.z - player.player.z;
-          var d = Math.sqrt(dx * dx + dz * dz);
-          if (d < nearestDist) {
-            nearestDist = d;
-            nearest = en;
-          }
+      for (var j = 0; j < missionEnemies.length; j++) {
+        var en = missionEnemies[j];
+        if (!en.alive) continue;
+        var dx = en.x - player.player.x;
+        var dz = en.z - player.player.z;
+        var d = Math.sqrt(dx * dx + dz * dz);
+        if (d < nearestDist) {
+          nearestDist = d;
+          nearest = en;
         }
       }
 
@@ -626,9 +753,6 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
         if (nearestDist < 30) {
           nearest.health -= 18;
-          if (nearest.health <= 0) {
-            nearest.alive = false;
-          }
         }
       }
     }
@@ -907,17 +1031,69 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
   if (name === 'mission') {
     player.player.angle = missionHeading;
+    player.setFiringPose();
+    player.player.mesh.rotation.y = player.player.angle;
     var ppx = player.player.x;
     var ppz = player.player.z;
     var pa = player.player.angle;
     var cosPA = Math.cos(pa);
     var sinPA = Math.sin(pa);
-    // Pull camera back and up to clearly frame player + enemies ahead
-    var behindX = ppx - cosPA * 6;
-    var behindZ = ppz - sinPA * 6;
-    camera.position.set(behindX, 3.1, behindZ);
-    var lookX = ppx + cosPA * 10;
-    var lookZ = ppz + sinPA * 10;
+
+    police.wantedHeat = 3;
+    police.wantedLevel = 3;
+
+    // Create persistent yellow tracers from player SMG toward enemies
+    var flashWP = player.getMuzzleFlashPos();
+    var flashOX = flashWP ? flashWP.x : ppx;
+    var flashOY = flashWP ? flashWP.y : 1.05;
+    var flashOZ = flashWP ? flashWP.z : ppz;
+
+    for (var t = 0; t < 4; t++) {
+      var targetEnemy = missionEnemies[t % missionEnemies.length];
+      if (!targetEnemy) continue;
+      var spreadX = rng.float(-0.3, 0.3);
+      var spreadZ = rng.float(-0.3, 0.3);
+      var tgtX = targetEnemy.x + rng.float(-0.5, 0.5) + spreadX;
+      var tgtY = 1.0 + rng.float(-0.2, 0.2);
+      var tgtZ = targetEnemy.z + rng.float(-0.5, 0.5) + spreadZ;
+      createYellowTracer(scene, flashOX, flashOY, flashOZ, tgtX, tgtY, tgtZ);
+    }
+
+    // Create orange enemy return tracers from e1 toward player
+    if (missionEnemies.length > 0 && missionEnemies[0].alive) {
+      var e1pos = missionEnemies[0].mesh.position;
+      for (var rt = 0; rt < 3; rt++) {
+        var retX = e1pos.x + rng.float(-0.3, 0.3);
+        var retY = 1.2 + rng.float(-0.1, 0.1);
+        var retZ = e1pos.z + rng.float(-0.3, 0.3);
+        var plX = ppx + rng.float(-0.4, 0.4);
+        var plY = 1.1 + rng.float(-0.1, 0.1);
+        var plZ = ppz + rng.float(-0.4, 0.4);
+        createOrangeTracer(scene, retX, retY, retZ, plX, plY, plZ);
+      }
+    }
+
+    // Impact sparks near enemies where player tracers hit
+    for (var s = 0; s < 6; s++) {
+      var senemy = missionEnemies[s % missionEnemies.length];
+      if (!senemy || !senemy.alive) continue;
+      var sparkGeo = new THREE.SphereGeometry(0.08, 4, 4);
+      var sparkMat = new THREE.MeshBasicMaterial({ color: 0xffee44, transparent: true, opacity: 0.8 });
+      var spark = new THREE.Mesh(sparkGeo, sparkMat);
+      spark.position.set(
+        senemy.x + rng.float(-0.5, 0.5),
+        0.8 + rng.float(-0.3, 1.2),
+        senemy.z + rng.float(-0.5, 0.5)
+      );
+      scene.add(spark);
+    }
+
+    // Over-the-shoulder camera: player + weapon in near foreground, enemies readable mid-frame
+    var behindX = ppx - cosPA * 4.5;
+    var behindZ = ppz - sinPA * 4.5;
+    camera.position.set(behindX, 2.8, behindZ);
+    var lookX = ppx + cosPA * 12;
+    var lookZ = ppz + sinPA * 12;
     camera.lookAt(lookX, 1.4, lookZ);
 
     missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
@@ -933,6 +1109,9 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       camera.position.set(dbehindX, 4.0, dbehindZ);
       camera.lookAt(dcar.x + Math.cos(dca) * 20, 1.8, dcar.z + Math.sin(dca) * 20);
     }
+
+    police.wantedHeat = 3;
+    police.wantedLevel = 3;
 
     renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ, 'drive');
   }

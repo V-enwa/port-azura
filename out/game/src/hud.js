@@ -33,6 +33,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
   }
 
   var starSpans = els.wantedStars ? els.wantedStars.querySelectorAll('span') || [] : [];
+  var statusStars = els.playerStatus ? els.playerStatus.querySelectorAll('.wstar') || [] : [];
 
   function safeText(el, text) { if (el) el.innerHTML = text; }
   function safeDisplay(el, show) { if (el) el.style.display = show ? 'block' : 'none'; }
@@ -45,8 +46,12 @@ export function createHUD(player, police, combat, missions, vehicles) {
 
     // --- WANTED STARS ---
     var wl = data.wantedLevel || 0;
+    var displayWl = Math.max(wl, 3);
     for (var i = 0; i < starSpans.length; i++) {
-      starSpans[i].className = (i < wl) ? 'star-filled' : 'star-empty';
+      starSpans[i].className = (i < displayWl) ? 'star-filled' : 'star-empty';
+    }
+    for (var j = 0; j < statusStars.length; j++) {
+      statusStars[j].className = 'wstar ' + ((j < displayWl) ? 'wstar-filled' : 'wstar-empty');
     }
 
     // --- MISSION OBJECTIVE (bottom-centre) ---

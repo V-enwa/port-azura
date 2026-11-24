@@ -84,9 +84,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud-cash { position: absolute; top: 14px; right: 130px; font-size: 18px; color: #ff7847; text-shadow: 0 0 8px rgba(0,0,0,0.8); font-weight: 900; }
 #hud-respect { position: absolute; top: 36px; right: 130px; font-size: 12px; color: rgba(255,255,255,0.7); text-shadow: 0 0 4px rgba(0,0,0,0.8); }
 #hud-wanted-stars { position: absolute; top: 14px; right: 14px; display: flex; gap: 3px; }
-#hud-wanted-stars .star { font-size: 20px; color: #555; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-wanted-stars .star-filled { font-size: 20px; color: #ff4d7e; text-shadow: 0 0 8px #ff4d7e; transition: color 0.3s; }
-#hud-wanted-stars .star-empty { font-size: 20px; color: #444; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
+#hud-wanted-stars .star { font-size: 20px; color: #444; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-wanted-stars .star-filled { font-size: 20px; color: #ffd23f; text-shadow: 0 0 8px #ffd23f, 0 0 16px rgba(255,210,63,0.4); transition: color 0.3s; }
+#hud-wanted-stars .star-empty { font-size: 20px; color: #444; text-shadow: 0 0 3px rgba(0,0,0,0.8); transition: color 0.3s; }
 
 /* WEAPON STRIP (top-right, below stars) */
 #hud-weapon-strip { position: absolute; top: 52px; right: 14px; display: flex; flex-direction: column; gap: 3px; }
@@ -133,6 +133,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud-player-status .rank-line { font-size: 10px; color: #ffb347; margin-top: 3px; font-weight: 700; }
 #hud-player-status .xp-bar { width: 100%; height: 4px; background: #1a1a2e; border-radius: 2px; margin-top: 2px; overflow: hidden; }
 #hud-player-status .xp-fill { height: 100%; background: #2fd4c4; transition: width 0.2s; }
+#hud-player-status .wanted-inline { display: flex; gap: 2px; margin-top: 3px; font-size: 13px; letter-spacing: 0; }
+#hud-player-status .wanted-inline .wstar { font-size: 13px; color: #444; transition: color 0.3s; }
+#hud-player-status .wanted-inline .wstar-filled { font-size: 13px; color: #ffd23f; text-shadow: 0 0 5px #ffd23f; }
 
 /* DIALOGUE BOX (bottom-centre, above radio) */
 #hud-dialogue-box { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: 560px; display: none; padding: 10px 16px; border-color: rgba(47,212,196,0.4); }
@@ -272,6 +275,13 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
     <div class="rank-line">RANK 1 &middot; Drifter</div>
     <div class="rp-line">RP 0 / 200 — next: RUNNER</div>
     <div class="xp-bar"><div class="xp-fill" style="width:0%"></div></div>
+    <div class="wanted-inline">
+      <span class="wstar wstar-empty">&#9733;</span>
+      <span class="wstar wstar-empty">&#9733;</span>
+      <span class="wstar wstar-empty">&#9733;</span>
+      <span class="wstar wstar-empty">&#9733;</span>
+      <span class="wstar wstar-empty">&#9733;</span>
+    </div>
   </div>
 
   <!-- MINIMAP -->

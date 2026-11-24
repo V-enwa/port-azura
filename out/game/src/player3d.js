@@ -29,6 +29,9 @@ export function createPlayer(world3d) {
   var rightArm = null;
   var stepCycle = 0;
   var lastMove = false;
+  var smgWeapon = null;
+  var muzzleFlashMesh = null;
+  var _firingPose = false;
 
   function buildPlayerMesh() {
     var group = new THREE.Group();
@@ -217,6 +220,99 @@ export function createPlayer(world3d) {
     player.mesh.rotation.y = player.angle;
   }
 
+  function createSMGWeapon() {
+    if (smgWeapon) return smgWeapon;
+    var group = new THREE.Group();
+
+    var metalMat = new THREE.MeshPhongMaterial({ color: 0x333333, specular: 0x111111, shininess: 30 });
+    var darkMetal = new THREE.MeshPhongMaterial({ color: 0x222222, specular: 0x000000, shininess: 20 });
+
+    var bodyGeo = new THREE.BoxGeometry(0.12, 0.14, 0.5);
+    var body = new THREE.Mesh(bodyGeo, metalMat);
+    body.position.set(0, 0, 0);
+    body.castShadow = true;
+    group.add(body);
+
+    var barrelGeo = new THREE.CylinderGeometry(0.03, 0.04, 0.35, 6);
+    var barrel = new THREE.Mesh(barrelGeo, darkMetal);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 0.02, 0.4);
+    barrel.castShadow = true;
+    group.add(barrel);
+
+    var magGeo = new THREE.BoxGeometry(0.06, 0.25, 0.08);
+    var mag = new THREE.Mesh(magGeo, metalMat);
+    mag.position.set(0, -0.18, -0.05);
+    group.add(mag);
+
+    var gripGeo = new THREE.BoxGeometry(0.08, 0.16, 0.06);
+    var grip = new THREE.Mesh(gripGeo, darkMetal);
+    grip.position.set(0, -0.12, -0.1);
+    grip.rotation.x = 0.2;
+    group.add(grip);
+
+    var stockGeo = new THREE.BoxGeometry(0.08, 0.08, 0.15);
+    var stock = new THREE.Mesh(stockGeo, metalMat);
+    stock.position.set(0, 0.02, -0.3);
+    group.add(stock);
+
+    player.mesh.add(group);
+    smgWeapon = group;
+    return group;
+  }
+
+  function setFiringPose() {
+    _firingPose = true;
+    createSMGWeapon();
+    if (smgWeapon) {
+      smgWeapon.visible = true;
+      smgWeapon.position.set(0.0, 1.05, 0.5);
+      smgWeapon.rotation.set(0, 0, 0);
+    }
+    if (leftArm) {
+      leftArm.rotation.set(-1.5, 0, 0.3);
+      leftArm.position.set(0.45, 1.05, 0.25);
+    }
+    if (rightArm) {
+      rightArm.rotation.set(-1.5, 0, -0.3);
+      rightArm.position.set(-0.45, 1.05, 0.3);
+    }
+    if (muzzleFlashMesh) {
+      muzzleFlashMesh.visible = true;
+      muzzleFlashMesh.position.set(0, 1.1, 0.95);
+    }
+  }
+
+  function resetPose() {
+    _firingPose = false;
+    if (smgWeapon) smgWeapon.visible = false;
+    if (leftArm) {
+      leftArm.rotation.set(0, 0, 0);
+      leftArm.position.set(0.45, 1.05, 0);
+    }
+    if (rightArm) {
+      rightArm.rotation.set(0, 0, 0);
+      rightArm.position.set(-0.45, 1.05, 0);
+    }
+  }
+
+  function createMuzzleFlashPermanent() {
+    if (muzzleFlashMesh) return muzzleFlashMesh;
+    var flashGeo = new THREE.SphereGeometry(0.15, 6, 6);
+    var flashMat = new THREE.MeshBasicMaterial({ color: 0xffee44, transparent: true, opacity: 0.9 });
+    muzzleFlashMesh = new THREE.Mesh(flashGeo, flashMat);
+    muzzleFlashMesh.visible = false;
+    player.mesh.add(muzzleFlashMesh);
+    return muzzleFlashMesh;
+  }
+
+  function getMuzzleFlashPos() {
+    if (!_firingPose || !player.mesh) return null;
+    var wp = new THREE.Vector3(0, 1.1, 0.95);
+    player.mesh.localToWorld(wp);
+    return wp;
+  }
+
   buildPlayerMesh();
 
   return {
@@ -224,5 +320,10 @@ export function createPlayer(world3d) {
     updatePlayer: updatePlayer,
     getPlayerPosition: getPlayerPosition,
     setPlayerPosition: setPlayerPosition,
+    setFiringPose: setFiringPose,
+    resetPose: resetPose,
+    createMuzzleFlashPermanent: createMuzzleFlashPermanent,
+    getMuzzleFlashPos: getMuzzleFlashPos,
+    get firingPose() { return _firingPose; },
   };
 }
