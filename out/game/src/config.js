@@ -144,7 +144,7 @@ export const COLOURS = {
   sky: '#1a1a3e',
   skyDusk: '#2d1b4e',
   horizonDusk: '#e8744a',
-  water: '#1b6d8c',
+  water: '#1c6f8e',
   waterShallow: '#1e88ab',
   sand: '#f5deb3',
   sandShadow: '#d4c4a0',

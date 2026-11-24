@@ -555,7 +555,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     // --- Set up candidate positions ---
     var heroX = 198, heroZ = 64, heroAng = 0;
     var crusX = 194, crusZ = 50, crusAng = Math.PI;
-    var heliX = 180, heliY = 9.5, heliZ = 66;
+    var heliX = 180, heliY = 10.5, heliZ = 66;
     var camPos = { x: 214, y: 5.5, z: 77 };
     var camLook = { x: 196, y: 1.8, z: 62 };
 

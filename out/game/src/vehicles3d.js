@@ -286,12 +286,19 @@ export function createVehicles(world3d, random, audio) {
     // --- Side mirrors ---
     var mirrorGeo = new THREE.BoxGeometry(0.12, 0.15, 0.08);
     var mirrorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a2e, specular: 0x333333, shininess: 30 });
+    var mirrorStemGeo = new THREE.BoxGeometry(0.06, 0.06, 0.3);
     var mirrorL = new THREE.Mesh(mirrorGeo, mirrorMat);
     mirrorL.position.set(cl * 0.06, cabY - cabinH * 0.1, cw / 2 - 0.25);
     group.add(mirrorL);
+    var stemL = new THREE.Mesh(mirrorStemGeo, cabFrameMat);
+    stemL.position.set(cl * 0.06, cabY - cabinH * 0.1, cw / 2 + 0.02);
+    group.add(stemL);
     var mirrorR = new THREE.Mesh(mirrorGeo, mirrorMat);
     mirrorR.position.set(cl * 0.06, cabY - cabinH * 0.1, -(cw / 2 - 0.25));
     group.add(mirrorR);
+    var stemR = new THREE.Mesh(mirrorStemGeo, cabFrameMat);
+    stemR.position.set(cl * 0.06, cabY - cabinH * 0.1, -(cw / 2 + 0.02));
+    group.add(stemR);
 
     group.position.set(x, 0, z);
     group.rotation.y = angle;
