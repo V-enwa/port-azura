@@ -845,6 +845,33 @@ export function createMissions(world3d, player, vehicles, police, combat, audio)
     }
   }
 
+  function getJobCardData() {
+    if (!activeMission) return null;
+    var m = activeMission;
+    var stepNames = ['Approach', 'Engage', 'Complete', 'Escape', 'Deliver'];
+    var stage = (m.step || 0) + 1;
+    var totalStages = (m.totalSteps || 3);
+    var timerStr = null;
+    var timerUrgent = false;
+    if (m.timeLeft !== undefined && m.timeLeft > 0) {
+      var mins = Math.floor(m.timeLeft / 60);
+      var secs = Math.floor(m.timeLeft % 60);
+      timerStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+      timerUrgent = m.timeLeft < 30;
+    }
+    var nextStep = stage < totalStages ? stepNames[Math.min(stage, stepNames.length - 1)] : 'Complete';
+    return {
+      number: m.id,
+      contact: m.contact || 'Bea',
+      title: m.name || '',
+      nextStep: nextStep,
+      stage: stage,
+      totalStages: totalStages,
+      timer: timerStr,
+      timerUrgent: timerUrgent,
+    };
+  }
+
   return {
     missions: missions,
     get activeMission() { return activeMission; },
@@ -868,6 +895,7 @@ export function createMissions(world3d, player, vehicles, police, combat, audio)
     destroyBeacon: destroyBeacon,
     checkStuntBonus: checkStuntBonus,
     get dialogueBox() { return dialogueBox; },
+    getJobCardData: getJobCardData,
     cleanupMission: cleanupMission,
   };
 }

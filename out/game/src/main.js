@@ -96,7 +96,7 @@ var accumulator = 0;
 var lastTime = 0;
 var gameTime = 0;
 
-var camTargetX = 0, camTargetZ = 0, camAngle = 0;
+var camTargetX = 0, camTargetZ = 0, camTargetAngle = 0;
 var camCurrentX = 0, camCurrentZ = 0, camCurrentY = 20, camCurrentAngle = 0;
 
 function updateCamera(dt) {

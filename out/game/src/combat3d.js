@@ -309,6 +309,12 @@ export function createCombat(world3d) {
     weapons[weaponIdx].ammo += amount;
   }
 
+  function getAllWeapons() {
+    return weapons.map(function(w, i) {
+      return { name: w.name, clip: w.clip, total: w.ammo, index: i };
+    });
+  }
+
   return {
     weapons: weapons,
     get currentWeapon() { return currentWeaponIdx; },
@@ -323,6 +329,7 @@ export function createCombat(world3d) {
     getWeaponName: getWeaponName,
     getWeaponAmmo: getWeaponAmmo,
     getCurrentWeapon: getCurrentWeapon,
+    getAllWeapons: getAllWeapons,
     addAmmo: addAmmo,
   };
 }

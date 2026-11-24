@@ -179,6 +179,21 @@ export const COLOURS = {
   policeLightbar: '#003399',
 };
 
+export const VEHICLE_DISPLAY = {
+  sedan: 'Aurelia LX',
+  taxi: 'PA Taxi',
+  truck: 'Titan Hauler',
+  sports: 'Vireo GT',
+  police: 'PAPD Interceptor',
+  comet: 'Cyclone',
+  gold_comet: 'Cyclone GLD',
+};
+
+export const PAPD_CALLSIGNS = [
+  'CORAL-7', 'BAY-12', 'MILE-21', 'PIER-3', 'REEF-9',
+  'TIDE-15', 'SURF-22', 'DOCK-8', 'WAVE-4',
+];
+
 export const NEON_COLOURS = ['#ff69b4', '#00bfff', '#39ff14', '#ffd700', '#ff4500', '#9400d3'];
 
 export const PLACES = {

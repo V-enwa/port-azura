@@ -896,6 +896,32 @@ export function createPolice(world3d, vehicles, random, audio) {
     clearAllPolice();
   }
 
+  function getDispatchData(playerX, playerZ) {
+    var PAPD_CALLSIGNS = [
+      'CORAL-7', 'BAY-12', 'MILE-21', 'PIER-3', 'REEF-9',
+      'TIDE-15', 'SURF-22', 'DOCK-8', 'WAVE-4',
+    ];
+    var tactics = ['PURSUIT', 'FLANKING', 'BOXING IN', 'ROADBLOCK'];
+    var unitRows = [];
+    var cap = 5;
+    for (var i = 0; i < policeCars.length && unitRows.length < cap; i++) {
+      var pc = policeCars[i];
+      if (!pc || !pc.alive || pc.exploding) continue;
+      var dx = playerX - pc.x;
+      var dz = playerZ - pc.z;
+      var dist = Math.round(Math.sqrt(dx * dx + dz * dz));
+      var tacticIdx = (i + (Math.floor(dist / 30))) % 4;
+      var callsign = PAPD_CALLSIGNS[i % PAPD_CALLSIGNS.length];
+      unitRows.push({
+        callsign: callsign,
+        distance: dist,
+        tactic: tactics[tacticIdx].toLowerCase().replace(' ', '-'),
+        tacticLabel: tactics[tacticIdx],
+      });
+    }
+    return { units: unitRows, helicopter: helicopter !== null };
+  }
+
   return {
     get wantedLevel() { return wantedLevel; },
     set wantedLevel(v) { wantedLevel = v; },
@@ -915,6 +941,7 @@ export function createPolice(world3d, vehicles, random, audio) {
     isPlayerVisible: isPlayerVisible,
     getWantedLevel: getWantedLevel,
     getWantedHeat: getWantedHeat,
+    getDispatchData: getDispatchData,
     resetWanted: resetWanted,
   };
 }

@@ -25,24 +25,94 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #title-screen .menu div:hover { background: rgba(255,255,255,0.1); }
 
 /* HUD */
-#hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-#hud-cash { position: absolute; top: 16px; right: 200px; font-size: 20px; color: #f39c12; text-shadow: 0 0 4px rgba(0,0,0,0.8); font-weight: bold; }
-#hud-respect { position: absolute; top: 40px; right: 200px; font-size: 14px; color: #ccc; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-health { position: absolute; top: 16px; left: 16px; width: 180px; height: 14px; background: #333; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
-#hud-health-fill { width: 100%; height: 100%; background: #2ecc71; transition: width 0.2s; }
-#hud-armour { position: absolute; top: 34px; left: 16px; width: 180px; height: 10px; background: #333; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
-#hud-armour-fill { width: 0%; height: 100%; background: #3498db; transition: width 0.2s; }
-#hud-weapon { position: absolute; bottom: 30px; right: 24px; text-align: right; }
-#hud-weapon-name { font-size: 18px; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-weapon-ammo { font-size: 14px; color: #aaa; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-wanted-stars { position: absolute; top: 16px; right: 24px; display: flex; gap: 4px; }
-#hud-wanted-stars .star { font-size: 22px; color: #555; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-wanted-stars .star-filled { font-size: 22px; color: #f5c842; text-shadow: 0 0 8px #f5c842; transition: color 0.3s; }
-#hud-wanted-stars .star-empty { font-size: 22px; color: #555; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
-#hud-objective { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); font-size: 14px; color: #f39c12; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; }
-#hud-dialogue { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); max-width: 600px; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 12px 20px; font-size: 15px; color: #fff; text-align: center; display: none; }
-#hud-radio { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.5); }
-#minimap { position: absolute; bottom: 16px; left: 16px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+#hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; letter-spacing: 0.5px; }
+
+/* Panel base */
+.hud-panel { background: rgba(10,10,20,0.78); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 8px 10px; }
+.hud-panel .label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
+.hud-panel .value { font-size: 13px; color: #fff; }
+.hud-chip { display: inline-block; background: rgba(243,156,18,0.2); color: #f39c12; font-size: 9px; padding: 1px 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.8px; border: 1px solid rgba(243,156,18,0.3); }
+
+/* JOB CARD (top-left) */
+#hud-job-card { position: absolute; top: 14px; left: 14px; min-width: 230px; display: none; }
+#hud-job-card .job-title { font-size: 14px; color: #f39c12; font-weight: 900; letter-spacing: 1px; margin-bottom: 3px; }
+#hud-job-card .job-objective { font-size: 11px; color: #ddd; margin-bottom: 2px; }
+#hud-job-card .job-next { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
+#hud-job-card .job-meta { font-size: 10px; color: rgba(255,255,255,0.5); display: flex; gap: 12px; }
+
+/* DISPATCH PANEL (below job card) */
+#hud-dispatch { position: absolute; top: 120px; left: 14px; min-width: 230px; display: none; }
+#hud-dispatch .dispatch-header { font-size: 10px; color: #e74c3c; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+#hud-dispatch .unit-count { font-size: 9px; color: rgba(255,255,255,0.5); float: right; }
+#hud-dispatch .unit-row { font-size: 10px; color: #ccc; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
+#hud-dispatch .unit-callsign { color: #fff; font-weight: 700; min-width: 60px; }
+#hud-dispatch .unit-dist { color: rgba(255,255,255,0.5); font-size: 9px; }
+#hud-dispatch .tactic-chip { font-size: 8px; padding: 1px 4px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tactic-pursuit { background: rgba(231,76,60,0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.35); }
+.tactic-flanking { background: rgba(243,156,18,0.25); color: #f39c12; border: 1px solid rgba(243,156,18,0.35); }
+.tactic-boxing { background: rgba(155,89,182,0.25); color: #9b59b6; border: 1px solid rgba(155,89,182,0.35); }
+.tactic-roadblock { background: rgba(52,152,219,0.25); color: #3498db; border: 1px solid rgba(52,152,219,0.35); }
+.tactic-spotlight { background: rgba(241,196,15,0.25); color: #f1c40f; border: 1px solid rgba(241,196,15,0.35); }
+
+/* AIR SUPPORT BANNER (top-centre) */
+#hud-air-support { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f1c40f; font-weight: 700; letter-spacing: 1px; display: none; padding: 4px 16px; }
+
+/* CASH + STARS (top-right) */
+#hud-cash { position: absolute; top: 14px; right: 100px; font-size: 18px; color: #f39c12; text-shadow: 0 0 8px rgba(0,0,0,0.8); font-weight: 900; }
+#hud-respect { position: absolute; top: 36px; right: 100px; font-size: 12px; color: #ccc; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-wanted-stars { position: absolute; top: 14px; right: 14px; display: flex; gap: 3px; }
+#hud-wanted-stars .star { font-size: 20px; color: #555; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-wanted-stars .star-filled { font-size: 20px; color: #f5c842; text-shadow: 0 0 8px #f5c842; transition: color 0.3s; }
+#hud-wanted-stars .star-empty { font-size: 20px; color: #555; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
+
+/* WEAPON STRIP (top-right, below stars) */
+#hud-weapon-strip { position: absolute; top: 52px; right: 14px; display: flex; flex-direction: column; gap: 3px; }
+#hud-weapon-strip .weapon-slot { font-size: 10px; color: rgba(255,255,255,0.35); padding: 2px 6px; background: rgba(10,10,20,0.78); border: 1px solid rgba(255,255,255,0.08); border-radius: 3px; display: flex; gap: 8px; align-items: center; min-width: 130px; }
+#hud-weapon-strip .weapon-slot.active { color: #fff; border-color: rgba(243,156,18,0.5); background: rgba(243,156,18,0.1); }
+#hud-weapon-strip .weapon-key { font-weight: 900; font-size: 11px; color: rgba(255,255,255,0.3); min-width: 12px; }
+#hud-weapon-strip .weapon-slot.active .weapon-key { color: #f39c12; }
+#hud-weapon-strip .weapon-name { flex: 1; }
+#hud-weapon-strip .weapon-ammo { color: rgba(255,255,255,0.4); font-size: 9px; }
+#hud-weapon-strip .weapon-slot.active .weapon-ammo { color: rgba(255,255,255,0.7); }
+
+/* VEHICLE CARD (bottom-right) */
+#hud-vehicle-card { position: absolute; bottom: 22px; right: 14px; min-width: 170px; display: none; text-align: right; }
+#hud-vehicle-card .vehicle-name { font-size: 16px; color: #fff; font-weight: 900; letter-spacing: 0.5px; }
+#hud-vehicle-card .vehicle-speed { font-size: 36px; color: #f39c12; font-weight: 900; line-height: 1; }
+#hud-vehicle-card .vehicle-speed-unit { font-size: 16px; color: rgba(255,255,255,0.4); }
+#hud-vehicle-card .vehicle-damage-bar { width: 100%; height: 5px; background: #333; border-radius: 2px; margin-top: 3px; overflow: hidden; }
+#hud-vehicle-card .vehicle-damage-fill { height: 100%; background: #2ecc71; transition: width 0.2s; }
+#hud-vehicle-card .vehicle-damage-pct { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+/* RADIO STRIP (bottom-centre) */
+#hud-radio-strip { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; display: none; }
+#hud-radio-strip .radio-station { color: #f39c12; font-weight: 700; }
+#hud-radio-strip .radio-track { color: rgba(255,255,255,0.4); }
+
+/* PLAYER STATUS (bottom-left, above minimap) */
+#hud-player-status { position: absolute; bottom: 212px; left: 14px; min-width: 180px; }
+#hud-player-status .status-bar { margin-bottom: 3px; }
+#hud-player-status .status-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
+#hud-player-status .status-bar-row { display: flex; align-items: center; gap: 6px; }
+#hud-player-status .status-bar-track { flex: 1; height: 7px; background: #222; border-radius: 2px; overflow: hidden; }
+#hud-player-status .status-bar-fill { height: 100%; transition: width 0.2s; }
+#hud-player-status .status-bar-num { font-size: 10px; font-weight: 700; min-width: 28px; text-align: right; }
+#hud-player-status .rank-line { font-size: 10px; color: #ccc; margin-top: 3px; }
+#hud-player-status .xp-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 2px; overflow: hidden; }
+#hud-player-status .xp-fill { height: 100%; background: #f39c12; transition: width 0.2s; }
+
+/* DIALOGUE BOX (bottom-centre, above radio) */
+#hud-dialogue-box { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: 560px; display: none; padding: 10px 16px; }
+#hud-dialogue-box .dialogue-speaker { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+#hud-dialogue-box .speaker-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: #fff; }
+#hud-dialogue-box .speaker-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+#hud-dialogue-box .dialogue-text { font-size: 13px; color: #fff; line-height: 1.3; }
+
+/* MISSION OBJECTIVE (bottom centre) */
+#hud-objective { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f39c12; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; display: none; }
+
+/* MINIMAP */
+#minimap { position: absolute; bottom: 14px; left: 14px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.85); }
 #minimap canvas { width: 100%; height: 100%; position: static; }
 </style>
 </head>
@@ -58,11 +128,29 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 </div>
 
 <div id="hud">
+  <!-- JOB CARD (top-left) -->
+  <div id="hud-job-card" class="hud-panel">
+    <div class="job-title"></div>
+    <div class="job-objective"></div>
+    <div class="job-next"></div>
+    <div class="job-meta">
+      <span class="job-stage"></span>
+      <span class="job-timer"></span>
+    </div>
+  </div>
+
+  <!-- DISPATCH PANEL (below job card) -->
+  <div id="hud-dispatch" class="hud-panel">
+    <div class="dispatch-header">PAPD DISPATCH <span class="unit-count"></span></div>
+    <div id="hud-dispatch-units"></div>
+  </div>
+
+  <!-- AIR SUPPORT BANNER (top-centre) -->
+  <div id="hud-air-support" class="hud-panel">AIR SUPPORT — AIR-7 is overhead</div>
+
+  <!-- CASH + STARS (top-right) -->
   <div id="hud-cash">$500</div>
   <div id="hud-respect">Drifter</div>
-  <div id="hud-health"><div id="hud-health-fill"></div></div>
-  <div id="hud-armour"><div id="hud-armour-fill"></div></div>
-  <div id="hud-weapon"><div id="hud-weapon-name">Pistol</div><div id="hud-weapon-ammo">12/60</div></div>
   <div id="hud-wanted-stars">
     <span class="star empty">&#9733;</span>
     <span class="star empty">&#9733;</span>
@@ -70,9 +158,58 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
     <span class="star empty">&#9733;</span>
     <span class="star empty">&#9733;</span>
   </div>
+
+  <!-- WEAPON STRIP (top-right, below stars) -->
+  <div id="hud-weapon-strip"></div>
+
+  <!-- VEHICLE CARD (bottom-right) -->
+  <div id="hud-vehicle-card" class="hud-panel">
+    <div class="vehicle-name"></div>
+    <div class="vehicle-speed"><span class="vspd-num">0</span><span class="vehicle-speed-unit"> km/h</span></div>
+    <div class="vehicle-damage-bar"><div class="vehicle-damage-fill" style="width:100%"></div></div>
+    <div class="vehicle-damage-pct">100%</div>
+  </div>
+
+  <!-- RADIO STRIP (bottom-centre) -->
+  <div id="hud-radio-strip" class="hud-panel">
+    <span class="radio-station"></span>
+    <span class="radio-sep"> &mdash; </span>
+    <span class="radio-track"></span>
+  </div>
+
+  <!-- DIALOGUE BOX (bottom-centre, above radio) -->
+  <div id="hud-dialogue-box" class="hud-panel">
+    <div class="dialogue-speaker">
+      <span class="speaker-avatar"></span>
+      <span class="speaker-name"></span>
+    </div>
+    <div class="dialogue-text"></div>
+  </div>
+
+  <!-- MISSION OBJECTIVE (bottom-centre, above dialogue) -->
   <div id="hud-objective"></div>
-  <div id="hud-dialogue"></div>
-  <div id="hud-radio">Radio Off</div>
+
+  <!-- PLAYER STATUS (bottom-left, above minimap) -->
+  <div id="hud-player-status" class="hud-panel">
+    <div class="status-bar">
+      <div class="status-label">HEALTH</div>
+      <div class="status-bar-row">
+        <div class="status-bar-track"><div class="status-bar-fill" style="width:100%;background:#2ecc71"></div></div>
+        <span class="status-bar-num">100</span>
+      </div>
+    </div>
+    <div class="status-bar">
+      <div class="status-label">ARMOUR</div>
+      <div class="status-bar-row">
+        <div class="status-bar-track"><div class="status-bar-fill" style="width:0%;background:#3498db"></div></div>
+        <span class="status-bar-num">0</span>
+      </div>
+    </div>
+    <div class="rank-line">RANK 1 &middot; Drifter</div>
+    <div class="xp-bar"><div class="xp-fill" style="width:0%"></div></div>
+  </div>
+
+  <!-- MINIMAP -->
   <div id="minimap"><canvas id="minimap-canvas" width="180" height="180"></canvas></div>
 </div>
 

@@ -1,5 +1,5 @@
 import { createRandom } from './random.js';
-import { PLACES, ROAD, BLOCK, PEDESTRIAN, MESH, COLOURS, STEP, CAR_TYPES } from './config.js';
+import { PLACES, ROAD, BLOCK, PEDESTRIAN, MESH, COLOURS, STEP, CAR_TYPES, RESPECT, VEHICLE_DISPLAY } from './config.js';
 
 function findCasinoRowRoads(world3d) {
   const roads = [];
@@ -29,6 +29,30 @@ function getSidewalkPos(rng, roads) {
     x: road.x + rng.float(0, road.length),
     z: road.z + laneOffset * side,
   };
+}
+
+function adjustGoldenHourLighting(scene) {
+  for (let i = 0; i < scene.children.length; i++) {
+    const child = scene.children[i];
+    if (child.isDirectionalLight) {
+      child.position.set(-200, 15, 200);
+      child.color.set(0xffaa55);
+      child.intensity = 1.5;
+    }
+    if (child.isHemisphereLight) {
+      child.color.set(0xffbb77);
+      child.groundColor.set(0x443322);
+      child.intensity = 0.5;
+    }
+    if (child.isAmbientLight) {
+      child.color.set(0x553311);
+      child.intensity = 0.4;
+    }
+  }
+  if (scene.fog) {
+    scene.fog.color.set(0xffcc88);
+    scene.fog.density = 0.0001;
+  }
 }
 
 function adjustDuskLighting(scene) {
@@ -123,10 +147,49 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
   if (!hud || !hud.update) return;
   var p = player.getPlayerPosition();
   var wInfo = combat.getWeaponAmmo ? combat.getWeaponAmmo() : { clip: 0, total: 0 };
+  var allWeapons = combat.getAllWeapons ? combat.getAllWeapons() : [];
   var trafficCars = (gameModules && gameModules.vehicles) ? (gameModules.vehicles.trafficCars || []) : [];
   var pedData = (gameModules && gameModules.pedestrians) ? (gameModules.pedestrians.getPeds ? gameModules.pedestrians.getPeds() : (gameModules.pedestrians.peds || [])) : [];
   var pCars = police ? (police.policeCars || []) : [];
   var roads = (gameModules && gameModules.world3d) ? (gameModules.world3d.roads || []) : [];
+  var wantedLvl = police.getWantedLevel ? police.getWantedLevel() : 0;
+  var dispatchData = (police.getDispatchData && wantedLvl >= 2) ? police.getDispatchData(p.x, p.z) : null;
+  var jobData = missions.getJobCardData ? missions.getJobCardData() : null;
+  var rawDialogue = missions.currentDialogue ? missions.currentDialogue() : '';
+
+  var dialogueData = null;
+  if (rawDialogue && rawDialogue.length > 0) {
+    var colonIdx = rawDialogue.indexOf(':');
+    var speaker = colonIdx > 0 ? rawDialogue.substring(0, colonIdx).trim() : '';
+    var text = colonIdx > 0 ? rawDialogue.substring(colonIdx + 1).trim() : rawDialogue;
+    dialogueData = { speaker: speaker, text: text };
+  }
+
+  var vehData = null;
+  var veh = gameModules && gameModules.vehicles && gameModules.vehicles.playerCar;
+  if (player.player.inCar && veh) {
+    var vType = veh.vehicleType || 'sedan';
+    var vName = VEHICLE_DISPLAY[vType] || vType;
+    vehData = {
+      name: vName,
+      speed: Math.round(Math.abs(veh.speed) * 3.6),
+      damagePct: veh.health ? (veh.health / 100 * 100) : 100,
+    };
+  }
+
+  var radioData = null;
+  if (audio && audio.getRadioName) {
+    var rn = audio.getRadioName();
+    if (rn && rn.length > 0) {
+      radioData = { station: rn, track: 'Now Playing' };
+    }
+  }
+
+  var xpVal = player.player.respect;
+  var rankIdx = 0;
+  for (var ri = RESPECT.thresholds.length - 1; ri >= 0; ri--) {
+    if (xpVal >= RESPECT.thresholds[ri]) { rankIdx = ri; break; }
+  }
 
   hud.update({
     cash: player.player.cash,
@@ -139,9 +202,9 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     weaponName: combat.getWeaponName ? combat.getWeaponName() : '',
     clip: wInfo.clip,
     totalAmmo: wInfo.total,
-    wantedLevel: police.getWantedLevel ? police.getWantedLevel() : 0,
+    wantedLevel: wantedLvl,
     objective: missions.currentObjective ? missions.currentObjective() : '',
-    dialogue: missions.currentDialogue ? missions.currentDialogue() : '',
+    dialogue: dialogueData,
     radioStation: (audio && audio.getRadioName) ? audio.getRadioName() : '',
     playerX: p.x,
     playerZ: p.z,
@@ -152,6 +215,14 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     worldRoads: roads,
     missionBeaconX: beaconX || 0,
     missionBeaconZ: beaconZ || 0,
+    job: jobData,
+    dispatchUnits: dispatchData ? dispatchData.units : [],
+    heliDeployed: dispatchData ? dispatchData.helicopter : false,
+    weapons: allWeapons,
+    activeWeapon: combat.getCurrentWeapon ? combat.getCurrentWeapon() : 0,
+    vehicle: vehData,
+    radio: radioData,
+    rankIndex: rankIdx,
   });
 }
 
@@ -223,45 +294,18 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    numSteps = 120;
+    numSteps = 5;
 
-    var car = vehicles.createCar('sports', 300, 200, Math.PI / 4, false);
+    var car = vehicles.createCar('sports', 200, 64, 0, false);
     if (car) {
       vehicles.enterCar(car, player.player.mesh);
       player.player.inCar = true;
       player.player.car = car;
-      car.speed = 25;
-      car.aiSpeed = 30;
+      car.speed = 0;
+      car.aiSpeed = 0;
     }
 
-    police.addWanted(10);
-    police.dispatchPolice(player.player.x, player.player.z);
-
-    for (let i = 0; i < 3; i++) {
-      var behindDist = 20 + i * 20;
-      var bx = 300 - Math.cos(Math.PI / 4) * behindDist;
-      var bz = 200 - Math.sin(Math.PI / 4) * behindDist;
-      var cruiser = vehicles.createCar('police', bx, bz, Math.PI / 4, false);
-      if (cruiser) {
-        cruiser.isPursuitCar = true;
-        cruiser.sirenOn = true;
-        cruiser.aiSpeed = 38;
-        cruiser.speed = 25;
-        police.policeCars.push(cruiser);
-      }
-    }
-
-    police.dispatchPolice(player.player.x, player.player.z);
-
-    if (audio) {
-      try { if (audio.cycleRadioStation) {
-        var radioAttempts = 0;
-        while ((audio.getRadioName ? audio.getRadioName() : '') !== 'Neon Nights' && radioAttempts < 20) {
-          audio.cycleRadioStation();
-          radioAttempts++;
-        }
-      }} catch(_) {}
-    }
+    police.addWanted(5);
   }
 
   if (name === 'mission') {
@@ -314,63 +358,62 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   if (name === 'drive') {
     numSteps = 120;
 
-    // Vertical road x=384 (Casino Row), car at z=80 heading south (+z)
-    var driveRoadX = 384;
-    var driveCarZ = 80;
-    var driveHeading = Math.PI / 2; // +z
-    var sedan = vehicles.createCar('sedan', driveRoadX, driveCarZ, driveHeading, false);
+    // Beachfront boulevard: horizontal road at z=320, car heading east (+x)
+    var driveRoadZ = 320;
+    var driveCarX = 120;
+    var driveHeading = 0;
+
+    var sedan = vehicles.createCar('sedan', driveCarX, driveRoadZ, driveHeading, false);
     if (sedan) {
       vehicles.enterCar(sedan, player.player.mesh);
       player.player.inCar = true;
       player.player.car = sedan;
-      sedan.speed = 20;
-      sedan.aiSpeed = 25;
+      sedan.speed = 22;
+      sedan.aiSpeed = 27;
     }
 
-    var cosDH = Math.cos(driveHeading);
-    var sinDH = Math.sin(driveHeading);
+    // Traffic cars ahead at staggered distances for depth
+    var traffic1 = vehicles.createCar('taxi', driveCarX + 14, driveRoadZ + 3, driveHeading, false);
+    if (traffic1) { traffic1.speed = 14; traffic1.aiSpeed = 20; }
 
-    // Traffic cars 12m and 20m ahead on same road, same direction
-    var traffic1 = vehicles.createCar('taxi', driveRoadX + cosDH * 12, driveCarZ + sinDH * 12, driveHeading, false);
-    if (traffic1) { traffic1.speed = 12; traffic1.aiSpeed = 18; }
+    var traffic2 = vehicles.createCar('comet', driveCarX + 26, driveRoadZ - 3, driveHeading, false);
+    if (traffic2) { traffic2.speed = 16; traffic2.aiSpeed = 22; }
 
-    var traffic2 = vehicles.createCar('sports', driveRoadX + cosDH * 20, driveCarZ + sinDH * 20, driveHeading, false);
-    if (traffic2) { traffic2.speed = 15; traffic2.aiSpeed = 20; }
+    var traffic3 = vehicles.createCar('sports', driveCarX + 40, driveRoadZ + 2, driveHeading, false);
+    if (traffic3) { traffic3.speed = 12; traffic3.aiSpeed = 18; }
 
-    // Oncoming car 18m ahead in opposite lane (offset laterally by 1 lane width)
-    var oppLane = -3; // negative lateral = opposite lane side
-    var oncomingX = driveRoadX + cosDH * 18 + sinDH * oppLane;
-    var oncomingZ = driveCarZ + sinDH * 18 - cosDH * oppLane;
-    var oncoming = vehicles.createCar('comet', oncomingX, oncomingZ, driveHeading + Math.PI, false);
-    if (oncoming) { oncoming.speed = 10; oncoming.aiSpeed = 16; }
+    // Oncoming truck 28m ahead on opposite lane
+    var oncoming = vehicles.createCar('truck', driveCarX + 28, driveRoadZ - 8, driveHeading + Math.PI, false);
+    if (oncoming) { oncoming.speed = 8; oncoming.aiSpeed = 14; }
 
-    // Background traffic on Casino Row roads
-    const roads = findCasinoRowRoads(world3d);
-    const nearbyRoads = roads.length > 0 ? roads : world3d.roads;
-    for (let i = 0; i < 14; i++) {
-      var road = rng.pick(nearbyRoads);
-      var isVert = Math.abs(Math.sin(road.angle)) > 0.7;
-      var angle = isVert ? Math.PI / 2 : 0;
-      var laneOff = rng.float(-ROAD.laneWidth, ROAD.laneWidth);
-      var cx, cz;
-      if (isVert) {
-        cx = road.x + laneOff;
-        cz = road.z + rng.float(0, road.length);
-      } else {
-        cx = road.x + rng.float(0, road.length);
-        cz = road.z + laneOff;
+    // Palm trees lining the beachfront boulevard stretch (z=320, x=80 to 200)
+    var palmPositions = [
+      { x: 85, z: 326 }, { x: 95, z: 326 }, { x: 105, z: 326 },
+      { x: 140, z: 326 }, { x: 155, z: 326 },
+      { x: 88, z: 314 }, { x: 100, z: 314 }, { x: 145, z: 314 },
+    ];
+    for (var pi = 0; pi < palmPositions.length; pi++) {
+      var pp = palmPositions[pi];
+      var trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 4.5, 6);
+      var trunk = new THREE.Mesh(trunkGeo, new THREE.MeshPhongMaterial({ color: 0x8b6914 }));
+      trunk.position.set(pp.x, 2.25, pp.z);
+      trunk.castShadow = true;
+      scene.add(trunk);
+      var crownGeo = new THREE.CylinderGeometry(0.1, 1.8, 2.5, 8);
+      var crown = new THREE.Mesh(crownGeo, new THREE.MeshPhongMaterial({ color: 0x3a7a28 }));
+      crown.position.set(pp.x, 5.8, pp.z);
+      crown.castShadow = true;
+      scene.add(crown);
+      for (var fi = 0; fi < 5; fi++) {
+        var frondAngle = (fi / 5) * Math.PI * 2 + rng.float(-0.3, 0.3);
+        var frondLen = 2 + rng.float(0, 1.5);
+        var frondGeo = new THREE.ConeGeometry(0.25, frondLen, 4);
+        var frond = new THREE.Mesh(frondGeo, new THREE.MeshPhongMaterial({ color: rng.bool() ? 0x2d5a1e : 0x3a7a28 }));
+        frond.position.set(pp.x + Math.cos(frondAngle) * 1.0, 6.5, pp.z + Math.sin(frondAngle) * 1.0);
+        frond.rotation.z = (Math.PI / 2) + rng.float(-0.3, 0.3);
+        frond.rotation.y = frondAngle;
+        scene.add(frond);
       }
-      var types = ['sedan', 'sedan', 'taxi', 'sports', 'comet', 'truck'];
-      var tcar = vehicles.createCar(rng.pick(types), cx, cz, angle, false);
-      if (tcar) {
-        tcar.speed = rng.float(8, 20);
-      }
-    }
-
-    for (let i = 0; i < 10; i++) {
-      var pos = getSidewalkPos(rng, nearbyRoads);
-      var ped = pedestrians.createPed(pos.x, pos.z, rng.angle());
-      if (ped) pedestrians.peds.push(ped);
     }
 
     police.resetWanted();
@@ -379,12 +422,12 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       missions.cleanupMission(missions.activeMission);
       missions.activeMission = null;
     }
-    // Beacon 60m down the same road so light pillar is visible ahead
-    var beaconZ = driveCarZ + 60;
-    missions.setBeacon(driveRoadX, beaconZ);
-    beaconX = driveRoadX;
-    beaconZ = beaconZ;
-    missions.showDialogue('Go to the Port Azura Casino');
+
+    // Beacon 80m down the road
+    beaconX = driveCarX + 80;
+    beaconZ = driveRoadZ;
+    missions.setBeacon(beaconX, beaconZ);
+    missions.showDialogue('Cruise the Beachfront Boulevard');
 
     if (audio) {
       try { if (audio.cycleRadioStation) {
@@ -395,6 +438,8 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
         }
       }} catch(_) {}
     }
+
+    adjustGoldenHourLighting(scene);
   }
 
   // Run simulation
@@ -432,22 +477,26 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
 
     simulateStep(dt, gameModules, fakeInput);
-
-    if (name === 'chase' && i % 20 === 0 && vehicles.playerCar) {
-      police.dispatchPolice(player.player.x, player.player.z);
-    }
   }
 
-// --- POST-SIMULATION: lock chase elements at fixed offsets ---
+// --- POST-SIMULATION: cinematic chase standoff ---
   if (name === 'chase' && vehicles.playerCar) {
     var pc = vehicles.playerCar;
-    var ca = pc.angle;
-    var pcx = pc.x;
-    var pcz = pc.z;
-    var cosA = Math.cos(ca);
-    var sinA = Math.sin(ca);
 
-    // Remove existing police cars
+    // Lock player car at standoff position on horizontal road z=64, heading east
+    pc.x = 200;
+    pc.z = 64;
+    pc.angle = 0;
+    pc.mesh.position.x = 200;
+    pc.mesh.position.z = 64;
+    pc.mesh.rotation.y = 0;
+    pc.speed = 0;
+    pc.aiSpeed = 0;
+    player.player.x = 200;
+    player.player.z = 64;
+    player.player.angle = 0;
+
+    // Remove any police cars that were spawned during sim
     for (var rci = police.policeCars.length - 1; rci >= 0; rci--) {
       var pcc = police.policeCars[rci];
       if (pcc) {
@@ -470,51 +519,31 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       police.officers.length = 0;
     }
 
-    // Place 3 cruisers at fixed offsets between car and camera, flanking frame edges
-    var cruiserOffsets = [
-      { behind: 5, lateral: -3 },
-      { behind: 6.5, lateral: 3 },
-      { behind: 0, lateral: 4.5 },
-    ];
-    for (var ci = 0; ci < 3; ci++) {
-      var off = cruiserOffsets[ci];
-      var cx = pcx - cosA * off.behind + sinA * off.lateral;
-      var cz = pcz - sinA * off.behind - cosA * off.lateral;
-      var cr = vehicles.createCar('police', cx, cz, ca, false);
-      if (cr) {
-        cr.isPursuitCar = true;
-        cr.sirenOn = true;
-        cr.speed = 25;
-        cr.aiSpeed = 35;
-        cr.x = cx;
-        cr.z = cz;
-        cr.angle = ca;
-        cr.mesh.position.x = cx;
-        cr.mesh.position.z = cz;
-        cr.mesh.rotation.y = ca;
-        if (cr.lightbarMeshes) {
-          for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
-            if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
-          }
+    // ONE police cruiser across the road, ~13 m north, facing our car head-on
+    var cruiserX = 195;
+    var cruiserZ = 52;
+    var cruiserHeading = Math.PI;
+    var cr = vehicles.createCar('police', cruiserX, cruiserZ, cruiserHeading, false);
+    if (cr) {
+      cr.isPursuitCar = true;
+      cr.sirenOn = true;
+      cr.speed = 0;
+      cr.aiSpeed = 0;
+      cr.x = cruiserX;
+      cr.z = cruiserZ;
+      cr.angle = cruiserHeading;
+      cr.mesh.position.x = cruiserX;
+      cr.mesh.position.z = cruiserZ;
+      cr.mesh.rotation.y = cruiserHeading;
+      if (cr.lightbarMeshes) {
+        for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
+          if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
         }
-        police.policeCars.push(cr);
       }
+      police.policeCars.push(cr);
     }
 
-    // Roadblock ~25m ahead: 3 police cars parked across the road
-    var rbx = pcx + cosA * 25;
-    var rbz = pcz + sinA * 25;
-    for (var rb = 0; rb < 3; rb++) {
-      var rbcx = rbx + sinA * (rb - 1) * 5;
-      var rbcz = rbz - cosA * (rb - 1) * 5;
-      var rbCar = vehicles.createCar('police', rbcx, rbcz, ca, true);
-      if (rbCar) {
-        rbCar.alive = true;
-        rbCar.roadblockStuck = true;
-      }
-    }
-
-    // Helicopter above player car — AIR-7 visible in upper third of frame
+    // AIR-7 Helicopter — fully in frame, moderate altitude
     var heliGroup = new THREE.Group();
 
     var bMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
@@ -627,33 +656,27 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       heliGroup.add(legR);
     }
 
-    // Spotlight
-    var heliAlt = 16;
-    var spotLight = new THREE.SpotLight(0xffffaa, 2.5, 60, Math.PI / 6, 0.3);
+    // Spotlight (off to avoid washing out cars)
+    var heliAlt = 11.5;
+    var spotLight = new THREE.SpotLight(0xffffaa, 0.1, 1, Math.PI / 6, 0.3);
     spotLight.position.set(0, -0.6, 1.5);
     spotLight.target.position.set(0, -(heliAlt + 1), 5);
     heliGroup.add(spotLight);
     heliGroup.add(spotLight.target);
 
-    // Spotlight cone
-    var coneGeo = new THREE.CylinderGeometry(0.1, 4, 10, 8, 1);
-    var coneMat = new THREE.MeshBasicMaterial({
-      color: 0xffffaa,
-      transparent: true,
-      opacity: 0.06,
-      side: THREE.DoubleSide,
-    });
-    var cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.set(0, -5.5, 2);
-    heliGroup.add(cone);
-
-    heliGroup.position.set(pcx + cosA * 25, heliAlt, pcz + sinA * 25);
+    heliGroup.position.set(185, heliAlt, 81);
+    heliGroup.rotation.y = -0.4;
     scene.add(heliGroup);
     window.__shotHeliGroup = heliGroup;
 
     // Force wanted to 5 stars
     if (police.wantedHeat !== undefined) police.wantedHeat = 7;
     if (police.wantedLevel !== undefined) police.wantedLevel = 5;
+
+    // Show PAPD dispatch radio line
+    if (missions && missions.showDialogue) {
+      missions.showDialogue('PAPD dispatch: all units respond, 5-star felony pursuit');
+    }
 
     if (audio && audio.playSiren) {
       try { audio.playSiren(true); } catch (_) {}
@@ -672,18 +695,12 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    if (vehicles.playerCar) {
-      var pcar = vehicles.playerCar;
-      var cca = pcar.angle;
-      var bX = pcar.x - Math.cos(cca) * 11;
-      var bZ = pcar.z - Math.sin(cca) * 11;
-      camera.position.set(bX, 3.4, bZ);
-      camera.lookAt(pcar.x + Math.cos(cca) * 10, 1.2, pcar.z + Math.sin(cca) * 10);
-    }
-
-    if (audio && audio.toggleRadio) {
-      try { audio.toggleRadio(); } catch (_) {}
-    }
+    // External cinematic camera: front-quarter side, ~14 m away, 4.5 m high
+    var camX = 212;
+    var camY = 4.5;
+    var camZ = 72;
+    camera.position.set(camX, camY, camZ);
+    camera.lookAt(197, 1.5, 62);
 
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
   }
@@ -710,10 +727,10 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     if (vehicles.playerCar) {
       var dcar = vehicles.playerCar;
       var dca = dcar.angle;
-      var dbehindX = dcar.x - Math.cos(dca) * 9;
-      var dbehindZ = dcar.z - Math.sin(dca) * 9;
-      camera.position.set(dbehindX, 3.5, dbehindZ);
-      camera.lookAt(dcar.x + Math.cos(dca) * 15, 2, dcar.z + Math.sin(dca) * 15);
+      var dbehindX = dcar.x - Math.cos(dca) * 10;
+      var dbehindZ = dcar.z - Math.sin(dca) * 10;
+      camera.position.set(dbehindX, 4.0, dbehindZ);
+      camera.lookAt(dcar.x + Math.cos(dca) * 20, 1.8, dcar.z + Math.sin(dca) * 20);
     }
 
     if (audio && audio.toggleRadio) {
