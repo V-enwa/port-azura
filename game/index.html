@@ -28,89 +28,91 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; font-family: 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; letter-spacing: 0.5px; }
 
 /* Panel base */
-.hud-panel { background: rgba(10,10,20,0.78); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 8px 10px; }
-.hud-panel .label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
+.hud-panel { background: rgba(8,10,24,0.82); border: 1px solid rgba(255,120,71,0.35); border-radius: 4px; padding: 8px 10px; }
+.hud-panel .label { font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
 .hud-panel .value { font-size: 13px; color: #fff; }
-.hud-chip { display: inline-block; background: rgba(243,156,18,0.2); color: #f39c12; font-size: 9px; padding: 1px 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.8px; border: 1px solid rgba(243,156,18,0.3); }
+.hud-chip { display: inline-block; background: rgba(255,120,71,0.2); color: #ff7847; font-size: 9px; padding: 1px 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.8px; border: 1px solid rgba(255,120,71,0.35); }
 
 /* JOB CARD (top-left) */
-#hud-job-card { position: absolute; top: 14px; left: 14px; min-width: 230px; display: none; }
-#hud-job-card .job-title { font-size: 14px; color: #f39c12; font-weight: 900; letter-spacing: 1px; margin-bottom: 3px; }
+#hud-job-card { position: absolute; top: 14px; left: 14px; min-width: 240px; display: block; border-color: rgba(47,212,196,0.5); }
+#hud-job-card .job-card-header { font-size: 9px; color: #2fd4c4; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 2px; padding-bottom: 3px; border-bottom: 1px solid rgba(47,212,196,0.3); }
+#hud-job-card .job-title { font-size: 14px; color: #ff7847; font-weight: 900; letter-spacing: 1px; margin-bottom: 3px; }
 #hud-job-card .job-objective { font-size: 11px; color: #ddd; margin-bottom: 2px; }
 #hud-job-card .job-next { font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
-#hud-job-card .job-meta { font-size: 10px; color: rgba(255,255,255,0.5); display: flex; gap: 12px; }
+#hud-job-card .job-meta { font-size: 10px; color: #ffb347; display: flex; gap: 12px; }
 
 /* DISPATCH PANEL (below job card) */
-#hud-dispatch { position: absolute; top: 120px; left: 14px; min-width: 230px; display: none; }
-#hud-dispatch .dispatch-header { font-size: 10px; color: #e74c3c; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
-#hud-dispatch .unit-count { font-size: 9px; color: rgba(255,255,255,0.5); float: right; }
-#hud-dispatch .unit-row { font-size: 10px; color: #ccc; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
-#hud-dispatch .unit-callsign { color: #fff; font-weight: 700; min-width: 60px; }
-#hud-dispatch .unit-dist { color: rgba(255,255,255,0.5); font-size: 9px; }
-#hud-dispatch .tactic-chip { font-size: 8px; padding: 1px 4px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-.tactic-pursuit { background: rgba(231,76,60,0.25); color: #e74c3c; border: 1px solid rgba(231,76,60,0.35); }
+#hud-dispatch { position: absolute; top: 120px; left: 14px; min-width: 240px; display: none; border-color: rgba(255,120,71,0.45); }
+#hud-dispatch .dispatch-header { font-size: 10px; color: #ff7847; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,120,71,0.3); }
+#hud-dispatch .unit-count { font-size: 9px; color: rgba(255,255,255,0.65); float: right; }
+#hud-dispatch .unit-row { font-size: 10px; color: #ccc; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+#hud-dispatch .unit-callsign { color: #fff; font-weight: 700; min-width: 58px; }
+#hud-dispatch .unit-dist { color: rgba(255,255,255,0.6); font-size: 9px; min-width: 30px; }
+#hud-dispatch .tactic-chip { font-size: 8px; padding: 1px 5px; border-radius: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tactic-pursuit { background: rgba(255,120,71,0.25); color: #ff7847; border: 1px solid rgba(255,120,71,0.35); }
 .tactic-flanking { background: rgba(243,156,18,0.25); color: #f39c12; border: 1px solid rgba(243,156,18,0.35); }
-.tactic-boxing { background: rgba(155,89,182,0.25); color: #9b59b6; border: 1px solid rgba(155,89,182,0.35); }
-.tactic-roadblock { background: rgba(52,152,219,0.25); color: #3498db; border: 1px solid rgba(52,152,219,0.35); }
-.tactic-spotlight { background: rgba(241,196,15,0.25); color: #f1c40f; border: 1px solid rgba(241,196,15,0.35); }
+.tactic-boxing { background: rgba(47,212,196,0.25); color: #2fd4c4; border: 1px solid rgba(47,212,196,0.35); }
+.tactic-roadblock { background: rgba(255,77,126,0.25); color: #ff4d7e; border: 1px solid rgba(255,77,126,0.35); }
+.tactic-spotlight { background: rgba(47,212,196,0.25); color: #2fd4c4; border: 1px solid rgba(47,212,196,0.35); }
+.tactic-spike-strip { background: rgba(155,89,182,0.25); color: #9b59b6; border: 1px solid rgba(155,89,182,0.35); }
 
 /* OBJECTIVE TRACKER (top-left, under dispatch) */
-#hud-objective-tracker { position: absolute; top: 190px; left: 14px; min-width: 230px; display: block; }
-#hud-objective-tracker .obj-tracker-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 1px; }
-#hud-objective-tracker .obj-tracker-text { font-size: 11px; color: #f39c12; font-weight: 700; }
-#hud-objective-tracker .obj-tracker-dist { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+#hud-objective-tracker { position: absolute; top: 258px; left: 14px; min-width: 240px; display: block; border-color: rgba(47,212,196,0.4); }
+#hud-objective-tracker .obj-tracker-label { font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 1px; }
+#hud-objective-tracker .obj-tracker-text { font-size: 11px; color: #ff7847; font-weight: 700; }
+#hud-objective-tracker .obj-tracker-dist { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 1px; }
 
 /* HEAT METER (top-right, under weapon strip) */
-#hud-heat-meter { position: absolute; top: 152px; right: 14px; min-width: 115px; }
-#hud-heat-meter .heat-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
-#hud-heat-meter .heat-bar-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-#hud-heat-meter .heat-bar-fill { height: 100%; background: linear-gradient(90deg, #f1c40f, #e74c3c); transition: width 0.3s; width: 0%; }
-#hud-heat-meter .heat-pct { font-size: 10px; color: rgba(255,255,255,0.45); text-align: right; margin-top: 2px; }
+#hud-heat-meter { position: absolute; top: 152px; right: 14px; min-width: 115px; border-color: rgba(255,77,126,0.4); }
+#hud-heat-meter .heat-label { font-size: 9px; color: #ff4d7e; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; font-weight: 700; }
+#hud-heat-meter .heat-bar-track { width: 100%; height: 6px; background: #1a1a2e; border-radius: 3px; overflow: hidden; }
+#hud-heat-meter .heat-bar-fill { height: 100%; background: linear-gradient(90deg, #ffb347, #ff4d7e); transition: width 0.3s; width: 0%; }
+#hud-heat-meter .heat-pct { font-size: 10px; color: rgba(255,255,255,0.65); text-align: right; margin-top: 2px; }
 
 /* EVENT TICKER (very bottom) */
-#hud-event-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 22px; background: rgba(10,10,20,0.85); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; padding: 0 14px; gap: 8px; font-size: 10px; }
-#hud-event-ticker .ticker-wire { color: #f39c12; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
-#hud-event-ticker .ticker-text { color: rgba(255,255,255,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#hud-event-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 22px; background: rgba(8,10,24,0.85); border-top: 1px solid rgba(47,212,196,0.35); display: flex; align-items: center; padding: 0 14px; gap: 8px; font-size: 10px; }
+#hud-event-ticker .ticker-wire { color: #ff7847; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+#hud-event-ticker .ticker-text { color: rgba(255,255,255,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* RP LINE (in player status) */
 #hud-player-status .rp-line { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
 
 /* AIR SUPPORT BANNER (top-centre) */
-#hud-air-support { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f1c40f; font-weight: 700; letter-spacing: 1px; display: none; padding: 4px 16px; }
+#hud-air-support { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #2fd4c4; font-weight: 700; letter-spacing: 1px; display: none; padding: 4px 16px; border-color: rgba(47,212,196,0.4); }
 
 /* CASH + STARS (top-right) */
-#hud-cash { position: absolute; top: 14px; right: 130px; font-size: 18px; color: #f39c12; text-shadow: 0 0 8px rgba(0,0,0,0.8); font-weight: 900; }
-#hud-respect { position: absolute; top: 36px; right: 130px; font-size: 12px; color: #ccc; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-cash { position: absolute; top: 14px; right: 130px; font-size: 18px; color: #ff7847; text-shadow: 0 0 8px rgba(0,0,0,0.8); font-weight: 900; }
+#hud-respect { position: absolute; top: 36px; right: 130px; font-size: 12px; color: rgba(255,255,255,0.7); text-shadow: 0 0 4px rgba(0,0,0,0.8); }
 #hud-wanted-stars { position: absolute; top: 14px; right: 14px; display: flex; gap: 3px; }
 #hud-wanted-stars .star { font-size: 20px; color: #555; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
-#hud-wanted-stars .star-filled { font-size: 20px; color: #f5c842; text-shadow: 0 0 8px #f5c842; transition: color 0.3s; }
-#hud-wanted-stars .star-empty { font-size: 20px; color: #555; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
+#hud-wanted-stars .star-filled { font-size: 20px; color: #ff4d7e; text-shadow: 0 0 8px #ff4d7e; transition: color 0.3s; }
+#hud-wanted-stars .star-empty { font-size: 20px; color: #444; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
 
 /* WEAPON STRIP (top-right, below stars) */
 #hud-weapon-strip { position: absolute; top: 52px; right: 14px; display: flex; flex-direction: column; gap: 3px; }
-#hud-weapon-strip .weapon-slot { font-size: 10px; color: rgba(255,255,255,0.35); padding: 2px 6px; background: rgba(10,10,20,0.78); border: 1px solid rgba(255,255,255,0.08); border-radius: 3px; display: flex; gap: 8px; align-items: center; min-width: 130px; }
-#hud-weapon-strip .weapon-slot.active { color: #fff; border-color: rgba(243,156,18,0.5); background: rgba(243,156,18,0.1); }
-#hud-weapon-strip .weapon-key { font-weight: 900; font-size: 11px; color: rgba(255,255,255,0.3); min-width: 12px; }
-#hud-weapon-strip .weapon-slot.active .weapon-key { color: #f39c12; }
+#hud-weapon-strip .weapon-slot { font-size: 10px; color: rgba(255,255,255,0.4); padding: 2px 6px; background: rgba(8,10,24,0.82); border: 1px solid rgba(255,120,71,0.15); border-radius: 3px; display: flex; gap: 8px; align-items: center; min-width: 130px; }
+#hud-weapon-strip .weapon-slot.active { color: #fff; border-color: rgba(255,120,71,0.65); background: rgba(255,120,71,0.15); }
+#hud-weapon-strip .weapon-key { font-weight: 900; font-size: 11px; color: #ff7847; min-width: 12px; }
+#hud-weapon-strip .weapon-slot.active .weapon-key { color: #ff7847; }
 #hud-weapon-strip .weapon-name { flex: 1; }
-#hud-weapon-strip .weapon-ammo { color: rgba(255,255,255,0.4); font-size: 9px; }
-#hud-weapon-strip .weapon-slot.active .weapon-ammo { color: rgba(255,255,255,0.7); }
+#hud-weapon-strip .weapon-ammo { color: rgba(255,255,255,0.45); font-size: 9px; }
+#hud-weapon-strip .weapon-slot.active .weapon-ammo { color: rgba(255,255,255,0.8); }
 
 /* VEHICLE CARD (bottom-right) */
-#hud-vehicle-card { position: absolute; bottom: 44px; right: 14px; min-width: 170px; display: none; text-align: right; }
+#hud-vehicle-card { position: absolute; bottom: 44px; right: 14px; min-width: 170px; display: none; text-align: right; border-color: rgba(255,120,71,0.4); }
 #hud-vehicle-card .vehicle-name { font-size: 16px; color: #fff; font-weight: 900; letter-spacing: 0.5px; }
-#hud-vehicle-card .vehicle-speed { font-size: 36px; color: #f39c12; font-weight: 900; line-height: 1; }
-#hud-vehicle-card .vehicle-speed-unit { font-size: 16px; color: rgba(255,255,255,0.4); }
-#hud-vehicle-card .vehicle-damage-bar { width: 100%; height: 5px; background: #333; border-radius: 2px; margin-top: 3px; overflow: hidden; }
+#hud-vehicle-card .vehicle-speed { font-size: 36px; color: #ff7847; font-weight: 900; line-height: 1; }
+#hud-vehicle-card .vehicle-speed-unit { font-size: 16px; color: rgba(255,255,255,0.45); }
+#hud-vehicle-card .vehicle-damage-bar { width: 100%; height: 5px; background: #1a1a2e; border-radius: 2px; margin-top: 3px; overflow: hidden; }
 #hud-vehicle-card .vehicle-damage-fill { height: 100%; background: #2ecc71; transition: width 0.2s; }
-#hud-vehicle-card .vehicle-damage-pct { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+#hud-vehicle-card .vehicle-damage-pct { font-size: 10px; color: rgba(255,255,255,0.55); margin-top: 1px; }
 
 /* RADIO STRIP (bottom area, always visible) */
-#hud-radio-strip { position: absolute; bottom: 80px; left: 210px; font-size: 11px; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 3px; white-space: nowrap; }
-#hud-radio-strip .radio-station { color: #f39c12; font-weight: 700; }
-#hud-radio-strip .radio-track { color: rgba(255,255,255,0.5); font-style: italic; }
+#hud-radio-strip { position: absolute; bottom: 80px; left: 210px; font-size: 11px; color: rgba(255,255,255,0.55); display: flex; align-items: center; gap: 3px; white-space: nowrap; border-color: rgba(47,212,196,0.35); }
+#hud-radio-strip .radio-station { color: #2fd4c4; font-weight: 700; }
+#hud-radio-strip .radio-track { color: rgba(255,255,255,0.55); font-style: italic; }
 #hud-radio-strip .radio-eq { display: inline-flex; align-items: flex-end; gap: 1px; margin-left: 4px; height: 10px; }
-#hud-radio-strip .eq-bar { width: 3px; background: #f39c12; border-radius: 1px; }
+#hud-radio-strip .eq-bar { width: 3px; background: #2fd4c4; border-radius: 1px; }
 #hud-radio-strip .eq-1 { height: 6px; animation: eq-anim1 0.5s ease-in-out infinite alternate; }
 #hud-radio-strip .eq-2 { height: 9px; animation: eq-anim2 0.4s ease-in-out infinite alternate; }
 #hud-radio-strip .eq-3 { height: 4px; animation: eq-anim3 0.6s ease-in-out infinite alternate; }
@@ -121,31 +123,37 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 @keyframes eq-anim4 { 0% { height: 5px; } 100% { height: 10px; } }
 
 /* PLAYER STATUS (bottom-left, above minimap) */
-#hud-player-status { position: absolute; bottom: 234px; left: 14px; min-width: 180px; }
+#hud-player-status { position: absolute; bottom: 234px; left: 14px; min-width: 180px; border-color: rgba(47,212,196,0.35); }
 #hud-player-status .status-bar { margin-bottom: 3px; }
-#hud-player-status .status-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
+#hud-player-status .status-label { font-size: 9px; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
 #hud-player-status .status-bar-row { display: flex; align-items: center; gap: 6px; }
-#hud-player-status .status-bar-track { flex: 1; height: 7px; background: #222; border-radius: 2px; overflow: hidden; }
+#hud-player-status .status-bar-track { flex: 1; height: 7px; background: #1a1a2e; border-radius: 2px; overflow: hidden; }
 #hud-player-status .status-bar-fill { height: 100%; transition: width 0.2s; }
-#hud-player-status .status-bar-num { font-size: 10px; font-weight: 700; min-width: 28px; text-align: right; }
-#hud-player-status .rank-line { font-size: 10px; color: #ccc; margin-top: 3px; }
-#hud-player-status .xp-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; margin-top: 2px; overflow: hidden; }
-#hud-player-status .xp-fill { height: 100%; background: #f39c12; transition: width 0.2s; }
+#hud-player-status .status-bar-num { font-size: 10px; font-weight: 700; min-width: 28px; text-align: right; color: rgba(255,255,255,0.8); }
+#hud-player-status .rank-line { font-size: 10px; color: #ffb347; margin-top: 3px; font-weight: 700; }
+#hud-player-status .xp-bar { width: 100%; height: 4px; background: #1a1a2e; border-radius: 2px; margin-top: 2px; overflow: hidden; }
+#hud-player-status .xp-fill { height: 100%; background: #2fd4c4; transition: width 0.2s; }
 
 /* DIALOGUE BOX (bottom-centre, above radio) */
-#hud-dialogue-box { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: 560px; display: none; padding: 10px 16px; }
+#hud-dialogue-box { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); max-width: 560px; display: none; padding: 10px 16px; border-color: rgba(47,212,196,0.4); }
 #hud-dialogue-box .dialogue-speaker { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 #hud-dialogue-box .speaker-avatar { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; color: #fff; }
-#hud-dialogue-box .speaker-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+#hud-dialogue-box .speaker-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #2fd4c4; }
 #hud-dialogue-box .dialogue-text { font-size: 13px; color: #fff; line-height: 1.3; }
 
 /* MISSION OBJECTIVE (bottom centre) */
-#hud-objective { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f39c12; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; display: none; }
+#hud-objective { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #ff7847; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; display: none; }
 
 /* MINIMAP */
-#minimap { position: absolute; bottom: 34px; left: 14px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.85); }
+#minimap { position: absolute; bottom: 34px; left: 14px; width: 180px; height: 180px; border: 2px solid rgba(47,212,196,0.35); border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.9); }
 #minimap canvas { width: 100%; height: 100%; position: static; }
-#minimap-district { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(255,255,255,0.55); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); pointer-events: none; z-index: 6; }
+#minimap-district { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(255,255,255,0.65); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); pointer-events: none; z-index: 6; }
+
+/* STREET-NAME CHIP (bottom-centre, above ticker) */
+#hud-street-chip { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); background: rgba(8,10,24,0.88); border: 1px solid rgba(255,120,71,0.45); border-radius: 3px; padding: 3px 12px; font-size: 9px; color: #ff7847; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; }
+
+/* CLOCK/WEATHER CHIP (top-centre-right) */
+#hud-time-chip { position: absolute; top: 14px; right: 250px; background: rgba(8,10,24,0.88); border: 1px solid rgba(47,212,196,0.4); border-radius: 3px; padding: 3px 10px; font-size: 9px; color: #2fd4c4; font-weight: 700; letter-spacing: 0.5px; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -162,14 +170,18 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 <div id="hud">
   <!-- JOB CARD (top-left) -->
   <div id="hud-job-card" class="hud-panel">
+    <div class="job-card-header">ACTIVE JOB</div>
     <div class="job-title"></div>
     <div class="job-objective"></div>
     <div class="job-next"></div>
     <div class="job-meta">
       <span class="job-stage"></span>
-      <span class="job-timer"></span>
+      <span class="job-reward"></span>
     </div>
   </div>
+
+  <!-- CLOCK/WEATHER CHIP (top-centre-right) -->
+  <div id="hud-time-chip">18:42 &middot; CLEAR &middot; 29&deg;C</div>
 
   <!-- DISPATCH PANEL (below job card) -->
   <div id="hud-dispatch" class="hud-panel">
@@ -267,6 +279,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
     <canvas id="minimap-canvas" width="180" height="180"></canvas>
     <div id="minimap-district">MARINA</div>
   </div>
+
+  <!-- STREET-NAME CHIP (bottom-centre, above ticker) -->
+  <div id="hud-street-chip">OCEAN DRIVE &middot; BEACHFRONT</div>
 
   <!-- EVENT TICKER (very bottom) -->
   <div id="hud-event-ticker">

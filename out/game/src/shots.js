@@ -227,13 +227,16 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     if (xpVal >= RESPECT.thresholds[ri]) { rankIdx = ri; break; }
   }
 
-  // Scene-specific objective tracker + ticker text
+  // Scene-specific data
   var objTrackerText = '';
   var objTrackerDist = '';
   var tickerText = 'CITY WIRE \u2014 Port Azura evening edition \u00B7 all clear across the bay \u00B7 ferry running on schedule';
   var districtLabel = 'MARINA';
   var heatPct = 0;
   var heatLabel = 'HEAT';
+  var streetName = 'PORT AZURA \u00B7 MARINA';
+  var timeChipText = '18:42 \u00B7 CLEAR \u00B7 29\u00B0C';
+  var sceneJobData = null;
 
   if (shotName === 'chase') {
     heatPct = 80;
@@ -242,24 +245,32 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     objTrackerDist = 'marina tunnel \u00B7 240 m';
     tickerText = 'CITY WIRE \u2014 PAPD sets roadblocks on Casino Row \u00B7 ferry strike enters day 2 \u00B7 heat wave over the bay';
     districtLabel = 'MARINA';
+    streetName = 'OCEAN DRIVE \u00B7 BEACHFRONT';
+    sceneJobData = { number: 1, contact: 'Dispatch', title: '5-Star Pursuit', nextStep: 'Flee', stage: 1, totalStages: 3, rewardText: 'REWARD $350' };
   } else if (shotName === 'mission') {
     heatPct = 15;
     objTrackerText = 'Hold the door';
     objTrackerDist = 'Coral Fin \u00B7 12 m';
     tickerText = 'CITY WIRE \u2014 Cobras spotted near the waterfront \u00B7 PAPD advises caution \u00B7 marina district on alert';
     districtLabel = 'MARINA';
+    streetName = 'CORAL FIN \u00B7 MARINA';
+    sceneJobData = { number: 4, contact: 'Bea', title: 'Hold the Door', nextStep: 'Engage', stage: 1, totalStages: 3, rewardText: 'REWARD $850' };
   } else if (shotName === 'drive') {
     heatPct = 0;
     objTrackerText = 'Next fare';
     objTrackerDist = 'Coral Fin, 180 m';
     tickerText = 'CITY WIRE \u2014 beachfront cruise season \u00B7 golden-hour traffic building \u00B7 ferry running on schedule';
     districtLabel = 'BEACHFRONT';
+    streetName = 'OCEAN DRIVE \u00B7 BEACHFRONT';
+    sceneJobData = { number: 2, contact: 'Taxi Co.', title: 'Beachfront Fare', nextStep: 'Pick up passenger', stage: 1, totalStages: 2, rewardText: 'REWARD $40' };
   } else if (shotName === 'cover') {
     heatPct = 0;
     objTrackerText = 'Meet Bea';
     objTrackerDist = 'Coral Fin';
     tickerText = 'CITY WIRE \u2014 Port Azura evening edition \u00B7 all quiet on Casino Row \u00B7 warm breeze off the bay';
     districtLabel = 'CASINO ROW';
+    streetName = 'PORT AZURA \u00B7 CASINO ROW';
+    sceneJobData = { number: 1, contact: 'Bea', title: 'Homecoming', nextStep: 'Approach', stage: 1, totalStages: 3, rewardText: 'REWARD $850' };
   }
 
   // Heat from wantedHeat if available
@@ -267,6 +278,9 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     heatPct = Math.min(100, (wantedHeat / 7) * 100);
     if (heatPct > 50) heatLabel = 'EVADE!';
   }
+
+  // Prefer scene job data over mission's job card
+  var finalJobData = sceneJobData || jobData;
 
   hud.update({
     cash: player.player.cash,
@@ -292,7 +306,7 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     worldRoads: roads,
     missionBeaconX: beaconX || 0,
     missionBeaconZ: beaconZ || 0,
-    job: jobData,
+    job: finalJobData,
     dispatchUnits: dispatchData ? dispatchData.units : [],
     heliDeployed: dispatchData ? dispatchData.helicopter : false,
     weapons: allWeapons,
@@ -306,6 +320,8 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     objectiveTrackerDist: objTrackerDist,
     tickerText: tickerText,
     districtLabel: districtLabel,
+    streetName: streetName,
+    timeChipText: timeChipText,
   });
 }
 
@@ -688,7 +704,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     // --- Set up candidate positions ---
     var heroX = 198, heroZ = 64, heroAng = 0;
     var crusX = 194, crusZ = 50, crusAng = Math.PI;
-    var heliX = 172, heliY = 18, heliZ = 74;
+    var heliX = 197, heliY = 12, heliZ = 67;
     var camPos = { x: 214, y: 5.5, z: 77 };
     var camLook = { x: 196, y: 1.8, z: 62 };
 
@@ -715,7 +731,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       if (police.helicopter && police.helicopter.mesh) {
         var hm = police.helicopter.mesh;
         hm.position.set(heliX, heliY, heliZ);
-        hm.rotation.y = -0.35;
+        hm.rotation.y = -0.25;
       }
 
       camera.position.set(camPos.x, camPos.y, camPos.z);
@@ -797,14 +813,15 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
     if (police.helicopter && police.helicopter.mesh) {
       police.helicopter.mesh.position.set(heliX, heliY, heliZ);
-      police.helicopter.mesh.rotation.y = -0.35;
+      police.helicopter.mesh.rotation.y = -0.25;
 
       // Scale cone to reach the ground from helicopter belly
       if (police.helicopter.cone) {
         var bellyOffset = 0.6;
         var coneNeededHeight = heliY - bellyOffset;
         police.helicopter.cone.scale.y = coneNeededHeight / 10;
-        police.helicopter.cone.position.y = -(heliY - bellyOffset) / 2;
+        police.helicopter.cone.position.y = -(heliY + bellyOffset) / 2;
+        police.helicopter.cone.material.opacity = 0.22;
       }
 
       // Point spotlight target at hero car
@@ -812,25 +829,20 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
         police.helicopter.spotLight.target.position.set(heroX - heliX, -heliY, heroZ - heliZ);
       }
 
-      // Ground light pool at cone base
+      // Ground light pool ON the hero car
       if (!police.helicopter.groundPool) {
         var poolGeo = new THREE.CylinderGeometry(5, 5, 0.02, 16);
         var poolMat = new THREE.MeshBasicMaterial({
-          color: 0xffffcc,
+          color: 0xffffdd,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0.45,
           side: THREE.DoubleSide,
         });
         police.helicopter.groundPool = new THREE.Mesh(poolGeo, poolMat);
         police.helicopter.groundPool.rotation.x = Math.PI / 2;
         scene.add(police.helicopter.groundPool);
       }
-      var coneCenterOffsetZ = 2;
-      var cosH = Math.cos(-0.35);
-      var sinH = Math.sin(-0.35);
-      var poolWorldX = heliX - sinH * coneCenterOffsetZ;
-      var poolWorldZ = heliZ + cosH * coneCenterOffsetZ;
-      police.helicopter.groundPool.position.set(poolWorldX, 0.03, poolWorldZ);
+      police.helicopter.groundPool.position.set(heroX, 0.03, heroZ);
       police.helicopter.groundPool.visible = true;
     }
 
@@ -885,8 +897,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
     var titleEl = document.getElementById('title-screen');
     if (titleEl) titleEl.style.display = 'flex';
-    var hudEl = document.getElementById('hud');
-    if (hudEl) hudEl.style.display = 'none';
+    renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0, 'cover');
   }
 
   if (name === 'chase') {

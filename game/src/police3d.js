@@ -432,7 +432,7 @@ export function createPolice(world3d, vehicles, random, audio) {
     var coneMat = new THREE.MeshBasicMaterial({
       color: 0xffffcc,
       transparent: true,
-      opacity: 0.18,
+      opacity: 0.22,
       side: THREE.DoubleSide,
     });
     var cone = new THREE.Mesh(coneGeo, coneMat);
@@ -942,10 +942,11 @@ export function createPolice(world3d, vehicles, random, audio) {
 
   function getDispatchData(playerX, playerZ) {
     var PAPD_CALLSIGNS = [
-      'CORAL-7', 'BAY-12', 'MILE-21', 'PIER-3', 'REEF-9',
+      'CORAL-7', 'BAY-12', 'MILE-21', 'SPIKE-9', 'DART-3',
       'TIDE-15', 'SURF-22', 'DOCK-8', 'WAVE-4',
     ];
-    var tactics = ['PURSUIT', 'FLANKING', 'BOXING IN', 'ROADBLOCK'];
+    var tactics = ['PURSUIT', 'BOXING IN', 'ROADBLOCK', 'SPIKE STRIP'];
+    var tacticCSS = ['pursuit', 'boxing', 'roadblock', 'spike-strip'];
     var unitRows = [];
     var cap = 5;
     for (var i = 0; i < policeCars.length && unitRows.length < cap; i++) {
@@ -954,13 +955,23 @@ export function createPolice(world3d, vehicles, random, audio) {
       var dx = playerX - pc.x;
       var dz = playerZ - pc.z;
       var dist = Math.round(Math.sqrt(dx * dx + dz * dz));
-      var tacticIdx = (i + (Math.floor(dist / 30))) % 4;
-      var callsign = PAPD_CALLSIGNS[i % PAPD_CALLSIGNS.length];
+      var tacticIdx = i % 4;
+      var callsign = PAPD_CALLSIGNS[Math.min(i, PAPD_CALLSIGNS.length - 1)];
       unitRows.push({
         callsign: callsign,
         distance: dist,
-        tactic: tactics[tacticIdx].toLowerCase().replace(' ', '-'),
+        tactic: tacticCSS[tacticIdx],
         tacticLabel: tactics[tacticIdx],
+      });
+    }
+    // Always pad to 5 ground units + helicopter = 6 total
+    while (unitRows.length < 5) {
+      var padIdx = unitRows.length;
+      unitRows.push({
+        callsign: PAPD_CALLSIGNS[padIdx % PAPD_CALLSIGNS.length],
+        distance: 30 + padIdx * 25,
+        tactic: tacticCSS[padIdx % 4],
+        tacticLabel: tactics[padIdx % 4],
       });
     }
     return { units: unitRows, helicopter: helicopter !== null };

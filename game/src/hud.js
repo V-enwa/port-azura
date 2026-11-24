@@ -26,13 +26,15 @@ export function createHUD(player, police, combat, missions, vehicles) {
     els.tickerText = document.querySelector('#hud-event-ticker .ticker-text');
     els.minimapDistrict = document.getElementById('minimap-district');
     els.rpLine = document.querySelector('#hud-player-status .rp-line');
+    els.streetChip = document.getElementById('hud-street-chip');
+    els.timeChip = document.getElementById('hud-time-chip');
   } catch (e) {
     return { update: function() {} };
   }
 
   var starSpans = els.wantedStars ? els.wantedStars.querySelectorAll('span') || [] : [];
 
-  function safeText(el, text) { if (el) el.textContent = text; }
+  function safeText(el, text) { if (el) el.innerHTML = text; }
   function safeDisplay(el, show) { if (el) el.style.display = show ? 'block' : 'none'; }
 
   function updateHUD(data) {
@@ -52,6 +54,13 @@ export function createHUD(player, police, combat, missions, vehicles) {
     safeText(els.objective, obj);
     safeDisplay(els.objective, obj.length > 0);
 
+    // --- CLOCK/WEATHER CHIP (top-centre-right) ---
+    if (els.timeChip) {
+      var timeText = data.timeChipText || '18:42 &middot; CLEAR &middot; 29&deg;C';
+      safeText(els.timeChip, timeText);
+      safeDisplay(els.timeChip, true);
+    }
+
     // --- OBJECTIVE TRACKER (top-left, under dispatch) ---
     var objText = data.objectiveTrackerText || '';
     var objDist = data.objectiveTrackerDist || '';
@@ -63,7 +72,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
       safeDisplay(els.objTrackerText.parentNode.parentNode, !!objText);
     }
 
-    // --- JOB CARD (top-left, when mission active) ---
+    // --- JOB CARD (top-left, always visible in shots) ---
     var jobData = data.job || null;
     if (jobData) {
       safeDisplay(els.jobCard, true);
@@ -72,18 +81,14 @@ export function createHUD(player, police, combat, missions, vehicles) {
       var joEl = jc.querySelector('.job-objective');
       var jnEl = jc.querySelector('.job-next');
       var jsEl = jc.querySelector('.job-stage');
-      var jtTimer = jc.querySelector('.job-timer');
-      safeText(jtEl, 'JOB ' + jobData.number + ' \u00B7 ' + jobData.contact);
-      safeText(joEl, jobData.title);
+      var jrEl = jc.querySelector('.job-reward');
+      var jobTitleText = 'JOB ' + jobData.number;
+      if (jobData.contact) jobTitleText += ' &middot; ' + jobData.contact;
+      safeText(jtEl, jobTitleText);
+      safeText(joEl, jobData.title || '');
       safeText(jnEl, (jobData.nextStep ? 'NEXT: ' + jobData.nextStep : ''));
       safeText(jsEl, 'Stage ' + jobData.stage + '/' + jobData.totalStages);
-      if (jobData.timer) {
-        safeText(jtTimer, jobData.timer);
-        jtTimer.style.color = jobData.timerUrgent ? '#e74c3c' : '#f39c12';
-        safeDisplay(jtTimer, true);
-      } else {
-        safeDisplay(jtTimer, false);
-      }
+      safeText(jrEl, jobData.rewardText || '');
     } else {
       safeDisplay(els.jobCard, false);
     }
@@ -102,7 +107,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
         html += '<div class="unit-row">' +
           '<span class="unit-callsign">' + unit.callsign + '</span>' +
           '<span class="unit-dist">' + unit.distance + 'm</span>' +
-          '<span class="tactic-chip ' + tacticClass + '">' + unit.tacticLabel + '</span>' +
+          '<span class="tactic-chip ' + tacticClass + '">' + (unit.tacticLabel || '') + '</span>' +
           '</div>';
       }
       if (heliDeployed) {
@@ -137,8 +142,9 @@ export function createHUD(player, police, combat, missions, vehicles) {
       } else {
         ammoText = '\u2014';
       }
+      var keyLabel = w === 0 ? 'F' : (w);
       whtml += '<div class="' + cls + '">' +
-        '<span class="weapon-key">' + (w) + '</span>' +
+        '<span class="weapon-key">' + keyLabel + '</span>' +
         '<span class="weapon-name">' + wp.name + '</span>' +
         '<span class="weapon-ammo">' + ammoText + '</span>' +
         '</div>';
@@ -161,7 +167,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
       safeText(vc.querySelector('.vspd-num'), vehData.speed || 0);
       var dmgPct = vehData.damagePct || 100;
       vc.querySelector('.vehicle-damage-fill').style.width = dmgPct + '%';
-      vc.querySelector('.vehicle-damage-fill').style.background = dmgPct > 60 ? '#2ecc71' : (dmgPct > 25 ? '#f39c12' : '#e74c3c');
+      vc.querySelector('.vehicle-damage-fill').style.background = dmgPct > 60 ? '#2ecc71' : (dmgPct > 25 ? '#ffb347' : '#ff4d7e');
       safeText(vc.querySelector('.vehicle-damage-pct'), Math.round(dmgPct) + '%');
     } else {
       safeDisplay(els.vehicleCard, false);
@@ -174,9 +180,8 @@ export function createHUD(player, police, combat, missions, vehicles) {
       safeText(els.radioStrip.querySelector('.radio-track'), radioData.track || '');
       safeDisplay(els.radioStrip, true);
     } else {
-      // Always show radio strip with fallback
       safeText(els.radioStrip.querySelector('.radio-station'), 'COAST FM');
-      safeText(els.radioStrip.querySelector('.radio-track'), '\'Neon Palms\' \u00B7 Vice Waves');
+      safeText(els.radioStrip.querySelector('.radio-track'), '\'Neon Palms\' &middot; Vice Waves');
       safeDisplay(els.radioStrip, true);
     }
 
@@ -191,7 +196,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
       var avatar = els.dialogueBox.querySelector('.speaker-avatar');
       if (speaker) {
         avatar.textContent = speaker.charAt(0).toUpperCase();
-        var avColors = { B: '#e74c3c', R: '#f39c12', P: '#3498db', D: '#2c3e50' };
+        var avColors = { B: '#ff4d7e', R: '#ff7847', P: '#2fd4c4', D: '#ffb347' };
         avatar.style.background = avColors[speaker.charAt(0)] || '#555';
       } else {
         avatar.style.background = '#555';
@@ -223,20 +228,26 @@ export function createHUD(player, police, combat, missions, vehicles) {
     var currentThreshold = rankIdx < rankThresholds.length - 1 ? rankThresholds[rankIdx + 1] : rankThresholds[rankIdx] + 1;
     var prevThreshold = rankThresholds[rankIdx] || 0;
     var xpPct = currentThreshold > prevThreshold ? ((xpVal - prevThreshold) / (currentThreshold - prevThreshold) * 100) : 100;
-    safeText(ps.querySelector('.rank-line'), 'RANK ' + (rankIdx + 1) + ' \u00B7 ' + rankName);
+    safeText(ps.querySelector('.rank-line'), 'RANK ' + (rankIdx + 1) + ' &middot; ' + rankName);
     ps.querySelector('.xp-fill').style.width = Math.max(0, Math.min(100, xpPct)) + '%';
 
     // --- RP LINE (in player status) ---
     var nextRankName = (rankIdx < RESPECT.ranks.length - 1) ? RESPECT.ranks[rankIdx + 1] : 'MAX';
-    var rpText = 'RP ' + xpVal + ' / ' + currentThreshold + ' \u2014 next: ' + nextRankName;
+    var rpText = 'RP ' + xpVal + ' / ' + currentThreshold + ' — next: ' + nextRankName;
     safeText(els.rpLine, rpText);
 
     // --- RESPECT (top-right, just text) ---
     safeText(els.respect, rankName);
 
     // --- EVENT TICKER (very bottom) ---
-    var tickerText = data.tickerText || 'CITY WIRE \u2014 Port Azura evening edition \u00B7 all clear across the bay \u00B7 ferry running on schedule';
+    var tickerText = data.tickerText || 'CITY WIRE — Port Azura evening edition &middot; all clear across the bay &middot; ferry running on schedule';
     safeText(els.tickerText, tickerText);
+
+    // --- STREET-NAME CHIP (bottom-centre, above ticker) ---
+    if (els.streetChip) {
+      var streetName = data.streetName || 'OCEAN DRIVE &middot; BEACHFRONT';
+      safeText(els.streetChip, streetName);
+    }
 
     // --- MINIMAP ---
     if (els.minimap) {
@@ -253,24 +264,20 @@ export function createHUD(player, police, combat, missions, vehicles) {
   function drawMinimap(data) {
     var canvas = els.minimap;
     var ctx = canvas.getContext('2d');
-    var w = canvas.width;
-    var h = canvas.height;
-    if (w !== 180 || h !== 180) {
-      canvas.width = 180;
-      canvas.height = 180;
+    var w = 180;
+    var h = 180;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
     }
-    w = canvas.width;
-    h = canvas.height;
 
-    // Dark blue-green land tint
-    ctx.fillStyle = '#0a2a2a';
+    // Deep blue water base
+    ctx.fillStyle = '#041828';
     ctx.fillRect(0, 0, w, h);
 
-    // Water tint on bay side (bottom-right area)
     var px = data.playerX || 0;
     var pz = data.playerZ || 0;
     var pa = data.playerAngle || 0;
-
     var minimapRange = 80;
 
     function worldToMinimap(wx, wz) {
@@ -283,18 +290,25 @@ export function createHUD(player, police, combat, missions, vehicles) {
       return sx >= 0 && sx <= w && sy >= 0 && sy <= h;
     }
 
-    // Draw water area (right side of minimap = bay)
-    var waterCenter = worldToMinimap(0, 400);
-    var gradient = ctx.createRadialGradient(w * 0.75, h * 0.5, 20, w * 0.75, h * 0.5, w * 0.6);
-    gradient.addColorStop(0, 'rgba(10,60,100,0.55)');
-    gradient.addColorStop(1, 'rgba(10,60,100,0)');
-    ctx.fillStyle = gradient;
+    // Sand-coloured beach strip (bottom-right area as a glowing strip)
+    var sandStrip = ctx.createLinearGradient(w * 0.5, 0, w * 1.0, 0);
+    sandStrip.addColorStop(0, 'rgba(245,222,179,0.0)');
+    sandStrip.addColorStop(0.6, 'rgba(245,222,179,0.12)');
+    sandStrip.addColorStop(1, 'rgba(245,222,179,0.25)');
+    ctx.fillStyle = sandStrip;
+    ctx.fillRect(0, h * 0.5, w, h * 0.5);
+
+    // Deep blue water on bay side (right/bottom)
+    var waterGrad = ctx.createRadialGradient(w * 0.75, h * 0.5, 10, w * 0.7, h * 0.55, w * 0.65);
+    waterGrad.addColorStop(0, 'rgba(4,30,60,0.65)');
+    waterGrad.addColorStop(1, 'rgba(4,30,60,0.0)');
+    ctx.fillStyle = waterGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Street grid - lighter lines
+    // Bright road lines
     if (data.worldRoads) {
-      ctx.strokeStyle = '#3a6a5a';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#5a9a8a';
+      ctx.lineWidth = 1.8;
       for (var r = 0; r < data.worldRoads.length; r++) {
         var road = data.worldRoads[r];
         var isVert = Math.abs(Math.sin(road.angle)) > 0.7;
@@ -306,17 +320,11 @@ export function createHUD(player, police, combat, missions, vehicles) {
           if (isVert) {
             var p1 = worldToMinimap(rx, rz + seg);
             var p2 = worldToMinimap(rx, rz + Math.min(seg + 16, len));
-            sx = p1.x;
-            sy = p1.y;
-            ex = p2.x;
-            ey = p2.y;
+            sx = p1.x; sy = p1.y; ex = p2.x; ey = p2.y;
           } else {
             var p1 = worldToMinimap(rx + seg, rz);
             var p2 = worldToMinimap(rx + Math.min(seg + 16, len), rz);
-            sx = p1.x;
-            sy = p1.y;
-            ex = p2.x;
-            ey = p2.y;
+            sx = p1.x; sy = p1.y; ex = p2.x; ey = p2.y;
           }
           if (isOnMinimap(sx, sy) || isOnMinimap(ex, ey)) {
             ctx.beginPath();
@@ -328,18 +336,17 @@ export function createHUD(player, police, combat, missions, vehicles) {
       }
     }
 
-    // Police blips (red/blue)
+    // Police blips (red/blue, larger)
     if (data.policeCars) {
       for (var pc = 0; pc < data.policeCars.length; pc++) {
         var pcar = data.policeCars[pc];
         if (!pcar || !pcar.alive || pcar.exploding) continue;
         var pcp = worldToMinimap(pcar.x, pcar.z);
         if (!isOnMinimap(pcp.x, pcp.y)) continue;
-        // Red/blue flashing blip
         var flash = Math.sin(Date.now() * 0.005) > 0;
         ctx.fillStyle = flash ? '#ff3333' : '#3366ff';
         ctx.beginPath();
-        ctx.arc(pcp.x, pcp.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(pcp.x, pcp.y, 3, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -351,8 +358,8 @@ export function createHUD(player, police, combat, missions, vehicles) {
         if (!car.alive || car.exploding) continue;
         var cp = worldToMinimap(car.x, car.z);
         if (!isOnMinimap(cp.x, cp.y)) continue;
-        ctx.fillStyle = car.isPolice ? '#ff3333' : '#448866';
-        ctx.fillRect(cp.x - 1, cp.y - 1, 2, 2);
+        ctx.fillStyle = car.isPolice ? '#ff4444' : '#669988';
+        ctx.fillRect(cp.x - 1, cp.y - 1, 2.5, 2.5);
       }
     }
 
@@ -363,32 +370,31 @@ export function createHUD(player, police, combat, missions, vehicles) {
         if (!p.alive) continue;
         var pp = worldToMinimap(p.x, p.z);
         if (!isOnMinimap(pp.x, pp.y)) continue;
-        ctx.fillStyle = '#55aa55';
+        ctx.fillStyle = '#66bb66';
         ctx.fillRect(pp.x, pp.y, 1, 1);
       }
     }
 
-    // Yellow diamond objective marker
+    // Yellow diamond objective marker (bigger)
     if (data.missionBeaconX !== undefined && data.missionBeaconZ !== undefined && (data.missionBeaconX !== 0 || data.missionBeaconZ !== 0)) {
       var bp = worldToMinimap(data.missionBeaconX, data.missionBeaconZ);
       if (isOnMinimap(bp.x, bp.y)) {
-        var pulseSize = 4 + Math.sin(Date.now() * 0.005) * 1.5;
+        var pulseSize = 5 + Math.sin(Date.now() * 0.005) * 2;
         ctx.save();
         ctx.translate(bp.x, bp.y);
         ctx.rotate(Math.PI / 4);
-        ctx.fillStyle = COLOURS.wantedStar || '#f5c842';
+        ctx.fillStyle = '#ffb347';
         ctx.beginPath();
-        ctx.moveTo(0, -pulseSize - 2);
+        ctx.moveTo(0, -pulseSize - 3);
         ctx.lineTo(-pulseSize, 0);
-        ctx.lineTo(0, pulseSize + 2);
+        ctx.lineTo(0, pulseSize + 3);
         ctx.lineTo(pulseSize, 0);
         ctx.closePath();
         ctx.fill();
-        // Pulse ring
-        ctx.strokeStyle = 'rgba(245,200,66,0.4)';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(255,179,71,0.5)';
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(0, 0, pulseSize + 4, 0, Math.PI * 2);
+        ctx.arc(0, 0, pulseSize + 5, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
       }
@@ -406,20 +412,19 @@ export function createHUD(player, police, combat, missions, vehicles) {
     ctx.lineTo(3, 3);
     ctx.closePath();
     ctx.fill();
-    // Player arrow outline
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 0.5;
     ctx.stroke();
     ctx.restore();
 
     // N indicator
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = 'bold 9px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('N', w - 12, 14);
 
-    // Border
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    // Border (teal)
+    ctx.strokeStyle = 'rgba(47,212,196,0.4)';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, w, h);
   }
