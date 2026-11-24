@@ -264,87 +264,129 @@ export function createPolice(world3d, vehicles, random, audio) {
 
     var heliGroup = new THREE.Group();
 
-    // Body
-    var bodyGeo = new THREE.BoxGeometry(2, 0.8, 4);
-    var bodyMat = new THREE.MeshPhongMaterial({ color: 0x222233, specular: 0x333333, shininess: 30 });
+    var bodyMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
+
+    // Fuselage
+    var bodyGeo = new THREE.BoxGeometry(1.5, 1.0, 4.5);
     var body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.4;
+    body.position.y = 0.6;
     body.castShadow = true;
     heliGroup.add(body);
 
-    // Tail
-    var tailGeo = new THREE.BoxGeometry(0.3, 0.3, 2);
-    var tail = new THREE.Mesh(tailGeo, bodyMat);
-    tail.position.set(0, 0.3, -2.5);
-    tail.castShadow = true;
-    heliGroup.add(tail);
+    // Nose
+    var noseGeo = new THREE.CylinderGeometry(0.1, 0.65, 1.2, 8);
+    var nose = new THREE.Mesh(noseGeo, bodyMat);
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 0.5, 2.8);
+    nose.castShadow = true;
+    heliGroup.add(nose);
 
-    // Tail fin
-    var finGeo = new THREE.BoxGeometry(0.15, 0.6, 0.4);
-    var fin = new THREE.Mesh(finGeo, bodyMat);
-    fin.position.set(0, 0.6, -3.2);
-    heliGroup.add(fin);
+    // Cockpit glass
+    var cockpitGeo = new THREE.BoxGeometry(1.0, 0.5, 0.9);
+    var cockpitMat = new THREE.MeshPhongMaterial({
+      color: 0x88aacc, specular: 0x888888, shininess: 60,
+      transparent: true, opacity: 0.4,
+    });
+    var cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
+    cockpit.position.set(0, 1.1, 1.5);
+    heliGroup.add(cockpit);
 
-    // Main rotor
-    var rotorGroup = new THREE.Group();
-    var bladeGeo = new THREE.BoxGeometry(0.15, 0.05, 5);
-    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
-    var blade1 = new THREE.Mesh(bladeGeo, bladeMat);
-    blade1.position.set(0, 0, 0);
-    rotorGroup.add(blade1);
-    var blade2 = new THREE.Mesh(bladeGeo, bladeMat);
-    blade2.rotation.y = Math.PI / 2;
-    blade2.position.set(0, 0, 0);
-    rotorGroup.add(blade2);
-    rotorGroup.position.y = 1.0;
-    heliGroup.add(rotorGroup);
+    // Tail boom
+    var tailBoomGeo = new THREE.BoxGeometry(0.35, 0.45, 2.5);
+    var tailBoom = new THREE.Mesh(tailBoomGeo, bodyMat);
+    tailBoom.position.set(0, 0.4, -3.0);
+    tailBoom.castShadow = true;
+    heliGroup.add(tailBoom);
+
+    // Tail fin - horizontal stabilizer
+    var stabGeo = new THREE.BoxGeometry(0.12, 0.15, 1.5);
+    var stab = new THREE.Mesh(stabGeo, bodyMat);
+    stab.position.set(0, 0.3, -4.0);
+    heliGroup.add(stab);
+
+    // Vertical fin
+    var vFinGeo = new THREE.BoxGeometry(0.12, 0.7, 0.5);
+    var vFin = new THREE.Mesh(vFinGeo, bodyMat);
+    vFin.position.set(0, 0.55, -4.0);
+    heliGroup.add(vFin);
 
     // Tail rotor
     var tailRotorGroup = new THREE.Group();
-    var tailBladeGeo = new THREE.BoxGeometry(0.08, 0.03, 1.2);
-    var tailBlade1 = new THREE.Mesh(tailBladeGeo, bladeMat);
-    tailRotorGroup.add(tailBlade1);
-    var tailBlade2 = new THREE.Mesh(tailBladeGeo, bladeMat);
-    tailBlade2.rotation.y = Math.PI / 2;
-    tailRotorGroup.add(tailBlade2);
-    tailRotorGroup.position.set(0, 0.15, -3.3);
+    var tailBladeGeo = new THREE.BoxGeometry(0.06, 0.04, 1.2);
+    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    var tb1 = new THREE.Mesh(tailBladeGeo, bladeMat);
+    tailRotorGroup.add(tb1);
+    var tb2 = new THREE.Mesh(tailBladeGeo, bladeMat);
+    tb2.rotation.y = Math.PI / 2;
+    tailRotorGroup.add(tb2);
+    tailRotorGroup.position.set(0.25, 0.3, -4.2);
     heliGroup.add(tailRotorGroup);
 
-    // Skids
-    var skidGeo = new THREE.CylinderGeometry(0.1, 0.1, 2, 6);
-    var skidMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
-    var skidConnectorGeo = new THREE.BoxGeometry(0.15, 0.3, 1.5);
+    // Main rotor system
+    var rotorGroup = new THREE.Group();
+    rotorGroup.position.y = 1.25;
 
+    // Rotor blades (2 long blades)
+    var mainBladeGeo = new THREE.BoxGeometry(0.12, 0.04, 3.0);
+    var mainBladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+    var mb1 = new THREE.Mesh(mainBladeGeo, mainBladeMat);
+    mb1.position.set(0, 0, 0);
+    rotorGroup.add(mb1);
+    var mb2 = new THREE.Mesh(mainBladeGeo, mainBladeMat);
+    mb2.rotation.y = Math.PI / 2;
+    mb2.position.set(0, 0, 0);
+    rotorGroup.add(mb2);
+
+    // Rotor disc (translucent blur disc for visibility)
+    var discGeo = new THREE.CylinderGeometry(2.8, 2.8, 0.03, 32);
+    var discMat = new THREE.MeshBasicMaterial({
+      color: 0x888888,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+    });
+    var disc = new THREE.Mesh(discGeo, discMat);
+    disc.position.set(0, 0, 0);
+    rotorGroup.add(disc);
+
+    // Top rotor hub
+    var hubGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
+    var hubMesh = new THREE.Mesh(hubGeo, new THREE.MeshPhongMaterial({ color: 0x666666 }));
+    hubMesh.position.y = 0.05;
+    rotorGroup.add(hubMesh);
+
+    heliGroup.add(rotorGroup);
+
+    // Skids
+    var skidMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
     for (var s = -1; s <= 1; s += 2) {
+      var skidGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
       var skid = new THREE.Mesh(skidGeo, skidMat);
       skid.rotation.x = Math.PI / 2;
-      skid.position.set(s * 0.8, -0.4, 0);
+      skid.position.set(s * 0.65, -0.35, 0.1);
       skid.castShadow = true;
       heliGroup.add(skid);
 
-      var conn = new THREE.Mesh(skidConnectorGeo, skidMat);
-      conn.position.set(s * 0.8, 0, 0);
-      heliGroup.add(conn);
+      var legFGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
+      var legF = new THREE.Mesh(legFGeo, skidMat);
+      legF.position.set(s * 0.65, -0.1, 1.0);
+      heliGroup.add(legF);
 
-      var skidLegGeo1 = new THREE.BoxGeometry(0.1, 0.6, 0.1);
-      var leg1 = new THREE.Mesh(skidLegGeo1, skidMat);
-      leg1.position.set(s * 0.8, -0.1, 0.7);
-      heliGroup.add(leg1);
-
-      var leg2 = new THREE.Mesh(skidLegGeo1.clone(), skidMat);
-      leg2.position.set(s * 0.8, -0.1, -0.7);
-      heliGroup.add(leg2);
+      var legRGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
+      var legR = new THREE.Mesh(legRGeo, skidMat);
+      legR.position.set(s * 0.65, -0.1, -0.8);
+      heliGroup.add(legR);
     }
 
     // Spotlight
-    var spotLight = new THREE.SpotLight(0xffffaa, 2, 50, Math.PI / 6, 0.3);
-    spotLight.position.set(0, -0.5, 1);
-    spotLight.target.position.set(0, -5, 0);
+    var spotLight = new THREE.SpotLight(0xffffaa, 2, 60, Math.PI / 6, 0.3);
+    spotLight.position.set(0, -0.6, 1.5);
+    spotLight.target.position.set(0, -10, 5);
     heliGroup.add(spotLight);
     heliGroup.add(spotLight.target);
 
-    // Spotlight cone mesh
-    var coneGeo = new THREE.CylinderGeometry(0, 3, 8, 8, 1);
+    // Spotlight cone
+    var coneGeo = new THREE.CylinderGeometry(0.1, 4, 10, 8, 1);
     var coneMat = new THREE.MeshBasicMaterial({
       color: 0xffffaa,
       transparent: true,
@@ -352,7 +394,7 @@ export function createPolice(world3d, vehicles, random, audio) {
       side: THREE.DoubleSide,
     });
     var cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.set(0, -4.5, 1);
+    cone.position.set(0, -5.5, 2);
     heliGroup.add(cone);
 
     var heliHeight = 35 + random.float(0, 10);

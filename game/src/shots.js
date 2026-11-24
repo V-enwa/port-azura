@@ -514,38 +514,129 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       }
     }
 
-    // Helicopter above player car
+    // Helicopter above player car — AIR-7 visible in upper third of frame
     var heliGroup = new THREE.Group();
-    var bodyGeo = new THREE.BoxGeometry(2, 0.8, 4);
-    var bMat = new THREE.MeshPhongMaterial({ color: 0x222233 });
+
+    var bMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
+    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
+
+    // Fuselage
+    var bodyGeo = new THREE.BoxGeometry(1.5, 1.0, 4.5);
     var body = new THREE.Mesh(bodyGeo, bMat);
-    body.position.y = 0.4;
+    body.position.y = 0.6;
     body.castShadow = true;
     heliGroup.add(body);
 
-    var tailGeo = new THREE.BoxGeometry(0.3, 0.3, 1.5);
-    var tail = new THREE.Mesh(tailGeo, bMat);
-    tail.position.set(0, 0.3, -2.5);
-    heliGroup.add(tail);
+    // Nose cone
+    var noseGeo = new THREE.CylinderGeometry(0.1, 0.65, 1.2, 8);
+    var nose = new THREE.Mesh(noseGeo, bMat);
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 0.5, 2.8);
+    nose.castShadow = true;
+    heliGroup.add(nose);
 
-    var bladeGroup = new THREE.Group();
-    var bladeGeo = new THREE.BoxGeometry(0.1, 0.05, 4);
-    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
-    var b1 = new THREE.Mesh(bladeGeo, bladeMat);
-    bladeGroup.add(b1);
-    var b2 = new THREE.Mesh(bladeGeo, bladeMat);
-    b2.rotation.y = Math.PI / 2;
-    bladeGroup.add(b2);
-    bladeGroup.position.y = 1.0;
-    heliGroup.add(bladeGroup);
+    // Cockpit glass
+    var cockpitGeo = new THREE.BoxGeometry(1.0, 0.5, 0.9);
+    var cockpitMat = new THREE.MeshPhongMaterial({
+      color: 0x88aacc, specular: 0x888888, shininess: 60,
+      transparent: true, opacity: 0.4,
+    });
+    var cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
+    cockpit.position.set(0, 1.1, 1.5);
+    heliGroup.add(cockpit);
 
-    var spotLight = new THREE.SpotLight(0xffffaa, 1.5, 50, Math.PI / 6, 0.3);
-    spotLight.position.set(0, -0.5, 1);
-    spotLight.target.position.set(0, -35, 8);
+    // Tail boom
+    var tailBoomGeo = new THREE.BoxGeometry(0.35, 0.45, 2.5);
+    var tailBoom = new THREE.Mesh(tailBoomGeo, bMat);
+    tailBoom.position.set(0, 0.4, -3.0);
+    tailBoom.castShadow = true;
+    heliGroup.add(tailBoom);
+
+    // Stabilizers
+    var stabGeo = new THREE.BoxGeometry(0.12, 0.15, 1.5);
+    var stab = new THREE.Mesh(stabGeo, bMat);
+    stab.position.set(0, 0.3, -4.0);
+    heliGroup.add(stab);
+
+    var vFinGeo = new THREE.BoxGeometry(0.12, 0.7, 0.5);
+    var vFin = new THREE.Mesh(vFinGeo, bMat);
+    vFin.position.set(0, 0.55, -4.0);
+    heliGroup.add(vFin);
+
+    // Tail rotor
+    var tailRotorGroup = new THREE.Group();
+    var tailBladeGeo = new THREE.BoxGeometry(0.06, 0.04, 1.2);
+    var tb1 = new THREE.Mesh(tailBladeGeo, bladeMat);
+    tailRotorGroup.add(tb1);
+    var tb2 = new THREE.Mesh(tailBladeGeo, bladeMat);
+    tb2.rotation.y = Math.PI / 2;
+    tailRotorGroup.add(tb2);
+    tailRotorGroup.position.set(0.25, 0.3, -4.2);
+    heliGroup.add(tailRotorGroup);
+
+    // Main rotor with disc
+    var rotorGroup = new THREE.Group();
+    rotorGroup.position.y = 1.25;
+
+    var mainBladeGeo = new THREE.BoxGeometry(0.12, 0.04, 3.0);
+    var mb1 = new THREE.Mesh(mainBladeGeo, bladeMat);
+    mb1.position.set(0, 0, 0);
+    rotorGroup.add(mb1);
+    var mb2 = new THREE.Mesh(mainBladeGeo, bladeMat);
+    mb2.rotation.y = Math.PI / 2;
+    mb2.position.set(0, 0, 0);
+    rotorGroup.add(mb2);
+
+    var discGeo = new THREE.CylinderGeometry(2.8, 2.8, 0.03, 32);
+    var discMat = new THREE.MeshBasicMaterial({
+      color: 0x888888,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.DoubleSide,
+    });
+    var disc = new THREE.Mesh(discGeo, discMat);
+    disc.position.set(0, 0, 0);
+    rotorGroup.add(disc);
+
+    // Rotor hub
+    var hubGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
+    var hubMesh = new THREE.Mesh(hubGeo, new THREE.MeshPhongMaterial({ color: 0x666666 }));
+    hubMesh.position.y = 0.05;
+    rotorGroup.add(hubMesh);
+
+    heliGroup.add(rotorGroup);
+
+    // Skids
+    var skidMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
+    for (var sd = -1; sd <= 1; sd += 2) {
+      var skidGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
+      var skid = new THREE.Mesh(skidGeo, skidMat);
+      skid.rotation.x = Math.PI / 2;
+      skid.position.set(sd * 0.65, -0.35, 0.1);
+      skid.castShadow = true;
+      heliGroup.add(skid);
+
+      var legFGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
+      var legF = new THREE.Mesh(legFGeo, skidMat);
+      legF.position.set(sd * 0.65, -0.1, 1.0);
+      heliGroup.add(legF);
+
+      var legRGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
+      var legR = new THREE.Mesh(legRGeo, skidMat);
+      legR.position.set(sd * 0.65, -0.1, -0.8);
+      heliGroup.add(legR);
+    }
+
+    // Spotlight
+    var heliAlt = 16;
+    var spotLight = new THREE.SpotLight(0xffffaa, 2.5, 60, Math.PI / 6, 0.3);
+    spotLight.position.set(0, -0.6, 1.5);
+    spotLight.target.position.set(0, -(heliAlt + 1), 5);
     heliGroup.add(spotLight);
     heliGroup.add(spotLight.target);
 
-    var coneGeo = new THREE.CylinderGeometry(0.4, 3, 8, 8, 1);
+    // Spotlight cone
+    var coneGeo = new THREE.CylinderGeometry(0.1, 4, 10, 8, 1);
     var coneMat = new THREE.MeshBasicMaterial({
       color: 0xffffaa,
       transparent: true,
@@ -553,11 +644,12 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       side: THREE.DoubleSide,
     });
     var cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.set(0, -4.5, 1);
+    cone.position.set(0, -5.5, 2);
     heliGroup.add(cone);
 
-    heliGroup.position.set(pcx + cosA * 15, 35, pcz + sinA * 15);
+    heliGroup.position.set(pcx + cosA * 25, heliAlt, pcz + sinA * 25);
     scene.add(heliGroup);
+    window.__shotHeliGroup = heliGroup;
 
     // Force wanted to 5 stars
     if (police.wantedHeat !== undefined) police.wantedHeat = 7;

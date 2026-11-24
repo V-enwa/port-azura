@@ -198,11 +198,11 @@ export const SCREEN = { TITLE: 0, PLAYING: 1, PAUSED: 2, BUSTED: 3, WASTED: 4, M
 export const FONT = 'monospace';
 
 export const MESH = {
-  carBodyH: 1.5,
+  carBodyH: 1.0,
   carWidth: 3.5,
   carLength: 7,
-  wheelRadius: 0.7,
-  cabinH: 1.0,
+  wheelRadius: 0.75,
+  cabinH: 0.75,
   pedHeadR: 0.35,
   pedTorso: { w: 0.8, h: 1.4, d: 0.5 },
   pedLeg: { w: 0.35, h: 1.2, d: 0.35 },

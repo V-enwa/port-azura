@@ -67,58 +67,51 @@ function createSkyTexture() {
 }
 
 function createRoadTexture() {
-  return makeCanvas(256, 256, (ctx, w, h) => {
-    ctx.fillStyle = COLOURS.road;
+  return makeCanvas(512, 512, (ctx, w, h) => {
+    ctx.fillStyle = '#3a3a3a';
     ctx.fillRect(0, 0, w, h);
 
-    ctx.strokeStyle = COLOURS.roadLine;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([16, 12]);
+    for (let i = 0; i < 3000; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const shade = 50 + Math.random() * 30;
+      ctx.fillStyle = 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+      ctx.fillRect(x, y, 2, 2);
+    }
 
-    const laneY = h / 4;
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#dddddd';
+    ctx.beginPath(); ctx.moveTo(0, 6); ctx.lineTo(w, 6); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, h - 6); ctx.lineTo(w, h - 6); ctx.stroke();
+
+    ctx.strokeStyle = '#ffe680';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([24, 16]);
     ctx.beginPath();
-    ctx.moveTo(0, laneY);
-    ctx.lineTo(w, laneY);
+    ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
     ctx.stroke();
-
-    const laneY2 = h * 3 / 4;
-    ctx.beginPath();
-    ctx.moveTo(0, laneY2);
-    ctx.lineTo(w, laneY2);
-    ctx.stroke();
-
-    ctx.setLineDash([3, 4]);
-    ctx.lineWidth = 1;
-    const center = h / 2;
-    ctx.beginPath();
-    ctx.moveTo(0, center);
-    ctx.lineTo(w, center);
-    ctx.stroke();
-
     ctx.setLineDash([]);
-    ctx.strokeStyle = '#555555';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, 1);
-    ctx.lineTo(w, 1);
-    ctx.moveTo(0, h - 1);
-    ctx.lineTo(w, h - 1);
-    ctx.stroke();
   });
 }
 
 function createSidewalkTexture() {
-  return makeCanvas(128, 128, (ctx, w, h) => {
-    ctx.fillStyle = COLOURS.sidewalk;
+  return makeCanvas(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#c8c8c8';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#999999';
+    for (let i = 0; i < 600; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const shade = 190 + Math.random() * 30;
+      ctx.fillStyle = 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+      ctx.fillRect(x, y, 2, 2);
+    }
+    ctx.strokeStyle = '#b0b0b0';
     ctx.lineWidth = 1;
-    const slab = 16;
-    for (let x = slab; x < w; x += slab) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
+    for (let x = 32; x < w; x += 32) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 64) {
+      ctx.beginPath(); ctx.moveTo(0, y + 32); ctx.lineTo(w, y + 32); ctx.stroke();
     }
   });
 }
@@ -127,11 +120,50 @@ function createGrassTexture() {
   return makeCanvas(256, 256, (ctx, w, h) => {
     ctx.fillStyle = COLOURS.grass;
     ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 600; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const shade = Math.random();
+      if (shade < 0.33) ctx.fillStyle = COLOURS.grass;
+      else if (shade < 0.66) ctx.fillStyle = COLOURS.grassShadow;
+      else ctx.fillStyle = '#5a8f4a';
+      ctx.fillRect(x, y, 3 + Math.random() * 4, 3 + Math.random() * 4);
+    }
+  });
+}
+
+function createPlazaTexture() {
+  return makeCanvas(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#a89880';
+    ctx.fillRect(0, 0, w, h);
     for (let i = 0; i < 400; i++) {
       const x = Math.random() * w;
       const y = Math.random() * h;
-      ctx.fillStyle = Math.random() < 0.5 ? COLOURS.grass : COLOURS.grassShadow;
-      ctx.fillRect(x, y, 2, 4);
+      const shade = 150 + Math.random() * 40;
+      ctx.fillStyle = 'rgb(' + shade + ',' + (shade - 10) + ',' + (shade - 20) + ')';
+      ctx.fillRect(x, y, 2, 3);
+    }
+    ctx.strokeStyle = '#9a8a72';
+    ctx.lineWidth = 1;
+    for (let x = 32; x < w; x += 32) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 32; y < h; y += 32) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+  });
+}
+
+function createGravelTexture() {
+  return makeCanvas(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#8a8072';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 500; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const shade = 100 + Math.random() * 60;
+      ctx.fillStyle = 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+      ctx.fillRect(x, y, 2 + Math.random() * 2, 2 + Math.random() * 2);
     }
   });
 }
@@ -560,6 +592,54 @@ export function createWorld3D(random) {
     }
   }
 
+  // Crosswalks at intersections
+  const crosswalkTex = makeCanvas(128, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#c8c8c8';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#e8e8e0';
+    for (let sx = 0; sx < w; sx += 12) {
+      ctx.fillRect(sx, 0, 8, h);
+    }
+    ctx.strokeStyle = '#b0b0b0';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0.5, 0.5, w - 1, h - 1);
+  });
+
+  for (let col = 0; col < numVertRoads; col++) {
+    for (let row = 0; row < numHorizRoads; row++) {
+      const x = vertRoadX[col];
+      const z = horizRoadZ[row];
+      const cwW = ROAD.width + BLOCK.sidewalk * 2;
+      const cwD = BLOCK.sidewalk;
+
+      const cwGeoNS = new THREE.PlaneGeometry(cwW, cwD);
+      const cwNS = new THREE.Mesh(cwGeoNS, new THREE.MeshLambertMaterial({ map: crosswalkTex, color: 0xeeeeee }));
+      cwNS.rotation.x = -Math.PI / 2;
+      cwNS.position.set(x, 0.04, z - ROAD.width / 2 - BLOCK.sidewalk / 2);
+      cwNS.receiveShadow = true;
+      scene.add(cwNS);
+
+      const cwNS2 = new THREE.Mesh(cwGeoNS.clone(), new THREE.MeshLambertMaterial({ map: crosswalkTex, color: 0xeeeeee }));
+      cwNS2.rotation.x = -Math.PI / 2;
+      cwNS2.position.set(x, 0.04, z + ROAD.width / 2 + BLOCK.sidewalk / 2);
+      cwNS2.receiveShadow = true;
+      scene.add(cwNS2);
+
+      const cwGeoEW = new THREE.PlaneGeometry(cwD, cwW);
+      const cwEW = new THREE.Mesh(cwGeoEW, new THREE.MeshLambertMaterial({ map: crosswalkTex, color: 0xeeeeee }));
+      cwEW.rotation.x = -Math.PI / 2;
+      cwEW.position.set(x - ROAD.width / 2 - BLOCK.sidewalk / 2, 0.04, z);
+      cwEW.receiveShadow = true;
+      scene.add(cwEW);
+
+      const cwEW2 = new THREE.Mesh(cwGeoEW.clone(), new THREE.MeshLambertMaterial({ map: crosswalkTex, color: 0xeeeeee }));
+      cwEW2.rotation.x = -Math.PI / 2;
+      cwEW2.position.set(x + ROAD.width / 2 + BLOCK.sidewalk / 2, 0.04, z);
+      cwEW2.receiveShadow = true;
+      scene.add(cwEW2);
+    }
+  }
+
   // Buildings
   const roofTex = createRoofTexture();
 
@@ -617,6 +697,31 @@ export function createWorld3D(random) {
           });
         }
       }
+    }
+  }
+
+  // Block infill (plaza/gravel between buildings)
+  const plazaTex = createPlazaTexture();
+  const gravelTex = createGravelTexture();
+
+  for (let col = 0; col < numBlockCols; col++) {
+    for (let row = 0; row < numBlockRows; row++) {
+      const bounds = blockBounds(col, row);
+      const areaW = bounds.maxX - bounds.minX;
+      const areaD = bounds.maxZ - bounds.minZ;
+      const district = getDistrictFor(col, row);
+
+      const isPaved = ['Casino Row', 'Docks', 'Beachfront'].indexOf(district.name) >= 0
+        || (col === 0 && row === 0);
+      const useTex = isPaved ? plazaTex : gravelTex;
+      const texColor = isPaved ? 0xddddcc : 0xccbbaa;
+
+      const fillGeo = new THREE.PlaneGeometry(areaW, areaD);
+      const fill = new THREE.Mesh(fillGeo, new THREE.MeshLambertMaterial({ map: useTex, color: texColor }));
+      fill.rotation.x = -Math.PI / 2;
+      fill.position.set(bounds.minX + areaW / 2, 0.015, bounds.minZ + areaD / 2);
+      fill.receiveShadow = true;
+      scene.add(fill);
     }
   }
 
