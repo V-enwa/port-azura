@@ -54,6 +54,27 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 .tactic-roadblock { background: rgba(52,152,219,0.25); color: #3498db; border: 1px solid rgba(52,152,219,0.35); }
 .tactic-spotlight { background: rgba(241,196,15,0.25); color: #f1c40f; border: 1px solid rgba(241,196,15,0.35); }
 
+/* OBJECTIVE TRACKER (top-left, under dispatch) */
+#hud-objective-tracker { position: absolute; top: 190px; left: 14px; min-width: 230px; display: block; }
+#hud-objective-tracker .obj-tracker-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 1px; }
+#hud-objective-tracker .obj-tracker-text { font-size: 11px; color: #f39c12; font-weight: 700; }
+#hud-objective-tracker .obj-tracker-dist { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+/* HEAT METER (top-right, under weapon strip) */
+#hud-heat-meter { position: absolute; top: 152px; right: 14px; min-width: 115px; }
+#hud-heat-meter .heat-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 2px; }
+#hud-heat-meter .heat-bar-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
+#hud-heat-meter .heat-bar-fill { height: 100%; background: linear-gradient(90deg, #f1c40f, #e74c3c); transition: width 0.3s; width: 0%; }
+#hud-heat-meter .heat-pct { font-size: 10px; color: rgba(255,255,255,0.45); text-align: right; margin-top: 2px; }
+
+/* EVENT TICKER (very bottom) */
+#hud-event-ticker { position: absolute; bottom: 0; left: 0; width: 100%; height: 22px; background: rgba(10,10,20,0.85); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; padding: 0 14px; gap: 8px; font-size: 10px; }
+#hud-event-ticker .ticker-wire { color: #f39c12; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+#hud-event-ticker .ticker-text { color: rgba(255,255,255,0.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* RP LINE (in player status) */
+#hud-player-status .rp-line { font-size: 9px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
 /* AIR SUPPORT BANNER (top-centre) */
 #hud-air-support { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f1c40f; font-weight: 700; letter-spacing: 1px; display: none; padding: 4px 16px; }
 
@@ -76,7 +97,7 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud-weapon-strip .weapon-slot.active .weapon-ammo { color: rgba(255,255,255,0.7); }
 
 /* VEHICLE CARD (bottom-right) */
-#hud-vehicle-card { position: absolute; bottom: 22px; right: 14px; min-width: 170px; display: none; text-align: right; }
+#hud-vehicle-card { position: absolute; bottom: 44px; right: 14px; min-width: 170px; display: none; text-align: right; }
 #hud-vehicle-card .vehicle-name { font-size: 16px; color: #fff; font-weight: 900; letter-spacing: 0.5px; }
 #hud-vehicle-card .vehicle-speed { font-size: 36px; color: #f39c12; font-weight: 900; line-height: 1; }
 #hud-vehicle-card .vehicle-speed-unit { font-size: 16px; color: rgba(255,255,255,0.4); }
@@ -84,13 +105,23 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud-vehicle-card .vehicle-damage-fill { height: 100%; background: #2ecc71; transition: width 0.2s; }
 #hud-vehicle-card .vehicle-damage-pct { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 1px; }
 
-/* RADIO STRIP (bottom-centre) */
-#hud-radio-strip { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,0.5); text-align: center; display: none; }
+/* RADIO STRIP (bottom area, always visible) */
+#hud-radio-strip { position: absolute; bottom: 80px; left: 210px; font-size: 11px; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 3px; white-space: nowrap; }
 #hud-radio-strip .radio-station { color: #f39c12; font-weight: 700; }
-#hud-radio-strip .radio-track { color: rgba(255,255,255,0.4); }
+#hud-radio-strip .radio-track { color: rgba(255,255,255,0.5); font-style: italic; }
+#hud-radio-strip .radio-eq { display: inline-flex; align-items: flex-end; gap: 1px; margin-left: 4px; height: 10px; }
+#hud-radio-strip .eq-bar { width: 3px; background: #f39c12; border-radius: 1px; }
+#hud-radio-strip .eq-1 { height: 6px; animation: eq-anim1 0.5s ease-in-out infinite alternate; }
+#hud-radio-strip .eq-2 { height: 9px; animation: eq-anim2 0.4s ease-in-out infinite alternate; }
+#hud-radio-strip .eq-3 { height: 4px; animation: eq-anim3 0.6s ease-in-out infinite alternate; }
+#hud-radio-strip .eq-4 { height: 7px; animation: eq-anim4 0.35s ease-in-out infinite alternate; }
+@keyframes eq-anim1 { 0% { height: 4px; } 100% { height: 9px; } }
+@keyframes eq-anim2 { 0% { height: 7px; } 100% { height: 12px; } }
+@keyframes eq-anim3 { 0% { height: 3px; } 100% { height: 7px; } }
+@keyframes eq-anim4 { 0% { height: 5px; } 100% { height: 10px; } }
 
 /* PLAYER STATUS (bottom-left, above minimap) */
-#hud-player-status { position: absolute; bottom: 212px; left: 14px; min-width: 180px; }
+#hud-player-status { position: absolute; bottom: 234px; left: 14px; min-width: 180px; }
 #hud-player-status .status-bar { margin-bottom: 3px; }
 #hud-player-status .status-label { font-size: 9px; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
 #hud-player-status .status-bar-row { display: flex; align-items: center; gap: 6px; }
@@ -112,8 +143,9 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
 #hud-objective { position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #f39c12; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; display: none; }
 
 /* MINIMAP */
-#minimap { position: absolute; bottom: 14px; left: 14px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.85); }
+#minimap { position: absolute; bottom: 34px; left: 14px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.25); border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.85); }
 #minimap canvas { width: 100%; height: 100%; position: static; }
+#minimap-district { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font-size: 9px; color: rgba(255,255,255,0.55); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); pointer-events: none; z-index: 6; }
 </style>
 </head>
 <body>
@@ -145,6 +177,13 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
     <div id="hud-dispatch-units"></div>
   </div>
 
+  <!-- OBJECTIVE TRACKER (top-left, under dispatch) -->
+  <div id="hud-objective-tracker" class="hud-panel">
+    <div class="obj-tracker-label">OBJECTIVE</div>
+    <div class="obj-tracker-text"></div>
+    <div class="obj-tracker-dist"></div>
+  </div>
+
   <!-- AIR SUPPORT BANNER (top-centre) -->
   <div id="hud-air-support" class="hud-panel">AIR SUPPORT — AIR-7 is overhead</div>
 
@@ -162,6 +201,13 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
   <!-- WEAPON STRIP (top-right, below stars) -->
   <div id="hud-weapon-strip"></div>
 
+  <!-- HEAT METER (top-right, under weapon strip) -->
+  <div id="hud-heat-meter" class="hud-panel">
+    <div class="heat-label">HEAT</div>
+    <div class="heat-bar-track"><div class="heat-bar-fill"></div></div>
+    <div class="heat-pct">0%</div>
+  </div>
+
   <!-- VEHICLE CARD (bottom-right) -->
   <div id="hud-vehicle-card" class="hud-panel">
     <div class="vehicle-name"></div>
@@ -170,11 +216,17 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
     <div class="vehicle-damage-pct">100%</div>
   </div>
 
-  <!-- RADIO STRIP (bottom-centre) -->
+  <!-- RADIO STRIP (bottom area, always visible) -->
   <div id="hud-radio-strip" class="hud-panel">
     <span class="radio-station"></span>
     <span class="radio-sep"> &mdash; </span>
     <span class="radio-track"></span>
+    <span class="radio-eq">
+      <span class="eq-bar eq-1"></span>
+      <span class="eq-bar eq-2"></span>
+      <span class="eq-bar eq-3"></span>
+      <span class="eq-bar eq-4"></span>
+    </span>
   </div>
 
   <!-- DIALOGUE BOX (bottom-centre, above radio) -->
@@ -206,11 +258,21 @@ canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
       </div>
     </div>
     <div class="rank-line">RANK 1 &middot; Drifter</div>
+    <div class="rp-line">RP 0 / 200 — next: RUNNER</div>
     <div class="xp-bar"><div class="xp-fill" style="width:0%"></div></div>
   </div>
 
   <!-- MINIMAP -->
-  <div id="minimap"><canvas id="minimap-canvas" width="180" height="180"></canvas></div>
+  <div id="minimap">
+    <canvas id="minimap-canvas" width="180" height="180"></canvas>
+    <div id="minimap-district">MARINA</div>
+  </div>
+
+  <!-- EVENT TICKER (very bottom) -->
+  <div id="hud-event-ticker">
+    <span class="ticker-wire">CITY WIRE</span>
+    <span class="ticker-text"></span>
+  </div>
 </div>
 
 <script src="./vendor/three.min.js"></script>

@@ -31,6 +31,40 @@ function getSidewalkPos(rng, roads) {
   };
 }
 
+function findRoadsNearChase(world3d) {
+  const roads = [];
+  for (let i = 0; i < world3d.roads.length; i++) {
+    const road = world3d.roads[i];
+    const isVert = Math.abs(Math.sin(road.angle)) > 0.7;
+    if (isVert) {
+      const roadMidZ = road.z + (road.length || 0) / 2;
+      if (road.x > 100 && road.x < 340 && roadMidZ > -20 && roadMidZ < 200) roads.push(road);
+    } else {
+      const roadMidX = road.x + (road.length || 0) / 2;
+      if (road.z > 0 && road.z < 160 && roadMidX > 100 && roadMidX < 340) roads.push(road);
+    }
+  }
+  if (roads.length === 0) return world3d.roads;
+  return roads;
+}
+
+function findRoadsNearMission(world3d) {
+  const roads = [];
+  for (let i = 0; i < world3d.roads.length; i++) {
+    const road = world3d.roads[i];
+    const isVert = Math.abs(Math.sin(road.angle)) > 0.7;
+    const roadMidZ = road.z + (road.length || 0) / 2;
+    const roadMidX = road.x + (road.length || 0) / 2;
+    if (isVert) {
+      if (road.x < 150 && roadMidZ < 220) roads.push(road);
+    } else {
+      if (road.z < 180 && roadMidX < 150) roads.push(road);
+    }
+  }
+  if (roads.length === 0) return world3d.roads;
+  return roads;
+}
+
 function adjustGoldenHourLighting(scene) {
   for (let i = 0; i < scene.children.length; i++) {
     const child = scene.children[i];
@@ -143,7 +177,7 @@ function simulateStep(dt, gameModules, fakeInput) {
   missions.updateDialogue(dt);
 }
 
-function renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ) {
+function renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ, shotName) {
   if (!hud || !hud.update) return;
   var p = player.getPlayerPosition();
   var wInfo = combat.getWeaponAmmo ? combat.getWeaponAmmo() : { clip: 0, total: 0 };
@@ -153,9 +187,11 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
   var pCars = police ? (police.policeCars || []) : [];
   var roads = (gameModules && gameModules.world3d) ? (gameModules.world3d.roads || []) : [];
   var wantedLvl = police.getWantedLevel ? police.getWantedLevel() : 0;
+  var wantedHeat = (police.wantedHeat !== undefined) ? police.wantedHeat : 0;
   var dispatchData = (police.getDispatchData && wantedLvl >= 2) ? police.getDispatchData(p.x, p.z) : null;
   var jobData = missions.getJobCardData ? missions.getJobCardData() : null;
   var rawDialogue = missions.currentDialogue ? missions.currentDialogue() : '';
+  var objRaw = missions.currentObjective ? missions.currentObjective() : '';
 
   var dialogueData = null;
   if (rawDialogue && rawDialogue.length > 0) {
@@ -181,7 +217,7 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
   if (audio && audio.getRadioName) {
     var rn = audio.getRadioName();
     if (rn && rn.length > 0) {
-      radioData = { station: rn, track: 'Now Playing' };
+      radioData = { station: rn, track: '\'Neon Palms\' \u00B7 Vice Waves' };
     }
   }
 
@@ -189,6 +225,47 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
   var rankIdx = 0;
   for (var ri = RESPECT.thresholds.length - 1; ri >= 0; ri--) {
     if (xpVal >= RESPECT.thresholds[ri]) { rankIdx = ri; break; }
+  }
+
+  // Scene-specific objective tracker + ticker text
+  var objTrackerText = '';
+  var objTrackerDist = '';
+  var tickerText = 'CITY WIRE \u2014 Port Azura evening edition \u00B7 all clear across the bay \u00B7 ferry running on schedule';
+  var districtLabel = 'MARINA';
+  var heatPct = 0;
+  var heatLabel = 'HEAT';
+
+  if (shotName === 'chase') {
+    heatPct = 80;
+    heatLabel = 'EVADE!';
+    objTrackerText = 'Shake the PAPD';
+    objTrackerDist = 'marina tunnel \u00B7 240 m';
+    tickerText = 'CITY WIRE \u2014 PAPD sets roadblocks on Casino Row \u00B7 ferry strike enters day 2 \u00B7 heat wave over the bay';
+    districtLabel = 'MARINA';
+  } else if (shotName === 'mission') {
+    heatPct = 15;
+    objTrackerText = 'Hold the door';
+    objTrackerDist = 'Coral Fin \u00B7 12 m';
+    tickerText = 'CITY WIRE \u2014 Cobras spotted near the waterfront \u00B7 PAPD advises caution \u00B7 marina district on alert';
+    districtLabel = 'MARINA';
+  } else if (shotName === 'drive') {
+    heatPct = 0;
+    objTrackerText = 'Next fare';
+    objTrackerDist = 'Coral Fin, 180 m';
+    tickerText = 'CITY WIRE \u2014 beachfront cruise season \u00B7 golden-hour traffic building \u00B7 ferry running on schedule';
+    districtLabel = 'BEACHFRONT';
+  } else if (shotName === 'cover') {
+    heatPct = 0;
+    objTrackerText = 'Meet Bea';
+    objTrackerDist = 'Coral Fin';
+    tickerText = 'CITY WIRE \u2014 Port Azura evening edition \u00B7 all quiet on Casino Row \u00B7 warm breeze off the bay';
+    districtLabel = 'CASINO ROW';
+  }
+
+  // Heat from wantedHeat if available
+  if (!heatPct && wantedHeat > 0) {
+    heatPct = Math.min(100, (wantedHeat / 7) * 100);
+    if (heatPct > 50) heatLabel = 'EVADE!';
   }
 
   hud.update({
@@ -203,7 +280,7 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     clip: wInfo.clip,
     totalAmmo: wInfo.total,
     wantedLevel: wantedLvl,
-    objective: missions.currentObjective ? missions.currentObjective() : '',
+    objective: objRaw,
     dialogue: dialogueData,
     radioStation: (audio && audio.getRadioName) ? audio.getRadioName() : '',
     playerX: p.x,
@@ -223,6 +300,12 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
     vehicle: vehData,
     radio: radioData,
     rankIndex: rankIdx,
+    heatPct: heatPct,
+    heatLabel: heatLabel,
+    objectiveTrackerText: objTrackerText,
+    objectiveTrackerDist: objTrackerDist,
+    tickerText: tickerText,
+    districtLabel: districtLabel,
   });
 }
 
@@ -306,6 +389,30 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
 
     police.addWanted(7);
+
+    // Ambient traffic at frame edges — well away from hero (198,64) / cruiser (194,50) / heli (180,66)
+    var chaseRoads = findRoadsNearChase(world3d);
+    // Far westbound traffic on the far right edge of frame
+    var edgeCar1 = vehicles.createCar('sedan', 230, 52, 0, false);
+    if (edgeCar1) { edgeCar1.speed = 10; edgeCar1.aiSpeed = 18; }
+    var edgeCar2 = vehicles.createCar('taxi', 240, 70, Math.PI, false);
+    if (edgeCar2) { edgeCar2.speed = 8; edgeCar2.aiSpeed = 16; }
+    // Far left edge
+    var edgeCar3 = vehicles.createCar('comet', 170, 74, 0, false);
+    if (edgeCar3) { edgeCar3.speed = 12; edgeCar3.aiSpeed = 20; }
+
+    // Pedestrians on sidewalks away from action
+    for (var cp = 0; cp < 4; cp++) {
+      var pos = getSidewalkPos(rng, chaseRoads);
+      if (!pos) continue;
+      // Don't place near the hero/cruiser action zone
+      var dx = pos.x - 196; var dz = pos.z - 62;
+      if (Math.abs(dx) < 15 && Math.abs(dz) < 15) continue;
+      // Keep within reasonable area
+      if (Math.abs(pos.x - 200) > 60 || Math.abs(pos.z - 64) > 40) continue;
+      var ped = pedestrians.createPed(pos.x, pos.z, rng.angle());
+      if (ped) pedestrians.peds.push(ped);
+    }
   }
 
   if (name === 'mission') {
@@ -354,6 +461,23 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
           }
         }
       }
+    }
+
+    // Parked car + pedestrians for fuller frame
+    var parkedSedan = vehicles.createCar('sedan', missionPX + 16, missionPZ - 3, 0, false);
+    if (parkedSedan) {
+      parkedSedan.parked = true;
+      parkedSedan.speed = 0;
+      parkedSedan.aiSpeed = 0;
+    }
+
+    var missionRoads = findRoadsNearMission(world3d);
+    for (var mp = 0; mp < 2; mp++) {
+      var mpos = getSidewalkPos(rng, missionRoads);
+      // Keep peds behind player or off to sides, not in front
+      if (mpos.x > missionPX + 5) mpos.x = missionPX - 4 + rng.float(0, 3);
+      var ped = pedestrians.createPed(mpos.x, mpos.z, rng.angle());
+      if (ped) pedestrians.peds.push(ped);
     }
   }
 
@@ -416,6 +540,15 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
         frond.rotation.y = frondAngle;
         scene.add(frond);
       }
+    }
+
+    // Pedestrians on beachfront sidewalk (north side of road z=320, sidewalk at ~330)
+    var driveSidewalkZ = driveRoadZ + 10;
+    for (var dp = 0; dp < 4; dp++) {
+      var pedX = 78 + rng.float(0, 90);
+      var pedZ = driveSidewalkZ + rng.float(-2, 2);
+      var ped = pedestrians.createPed(pedX, pedZ, rng.angle());
+      if (ped) pedestrians.peds.push(ped);
     }
 
     police.resetWanted();
@@ -724,7 +857,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
   if (name === 'chase') {
     // Camera already set by the frustum verification above — keep final position
-    renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
+    renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0, 'chase');
   }
 
   if (name === 'mission') {
@@ -743,7 +876,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     camera.lookAt(lookX, 1.4, lookZ);
 
     missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
-    renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
+    renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0, 'mission');
   }
 
   if (name === 'drive') {
@@ -756,7 +889,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       camera.lookAt(dcar.x + Math.cos(dca) * 20, 1.8, dcar.z + Math.sin(dca) * 20);
     }
 
-    renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ);
+    renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ, 'drive');
   }
 
   renderer.render(scene, camera);
