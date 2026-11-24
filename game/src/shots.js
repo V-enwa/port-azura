@@ -267,7 +267,11 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   if (name === 'mission') {
     numSteps = 180;
 
-    player.setPlayerPosition(PLACES.coralFin.x, PLACES.coralFin.z, 0);
+    // Player on horizontal road z=64, in front of Coral Fin, facing east down the street
+    var missionPX = 10;
+    var missionPZ = 64;
+    var missionHeading = 0; // east (+x)
+    player.setPlayerPosition(missionPX, missionPZ, missionHeading);
     combat.switchWeapon(2);
 
     var mission = missions.startMission(4);
@@ -276,22 +280,32 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
 
     if (mission && mission.enemies) {
-      var enemyPositions = [
-        { x: PLACES.coralFin.x + 10,  z: PLACES.coralFin.z },
-        { x: PLACES.coralFin.x + 12,  z: PLACES.coralFin.z + 6 },
-        { x: PLACES.coralFin.x + 8,   z: PLACES.coralFin.z - 6 },
-        { x: PLACES.coralFin.x + 15,  z: PLACES.coralFin.z + 3 },
-        { x: PLACES.coralFin.x + 14,  z: PLACES.coralFin.z - 3 },
-        { x: PLACES.coralFin.x + 7,   z: PLACES.coralFin.z - 2 },
+      var cosH = Math.cos(missionHeading);
+      var sinH = Math.sin(missionHeading);
+
+      var enemyDefs = [
+        { forward: 6,  lateral: -3 },
+        { forward: 9,  lateral: 2.5 },
+        { forward: 12, lateral: 0 },
       ];
-      for (let i = 0; i < mission.enemies.length; i++) {
-        var e = mission.enemies[i];
-        var ep = enemyPositions[i] || enemyPositions[0];
-        e.x = ep.x;
-        e.z = ep.z;
-        if (e.mesh) {
-          e.mesh.position.x = ep.x;
-          e.mesh.position.z = ep.z;
+
+      for (var ei = 0; ei < mission.enemies.length; ei++) {
+        var e = mission.enemies[ei];
+        if (ei < 3) {
+          var def = enemyDefs[ei];
+          var ex = missionPX + cosH * def.forward + sinH * def.lateral;
+          var ez = missionPZ + sinH * def.forward - cosH * def.lateral;
+          e.x = ex;
+          e.z = ez;
+          if (e.mesh) {
+            e.mesh.position.x = ex;
+            e.mesh.position.z = ez;
+          }
+        } else {
+          e.alive = false;
+          if (e.mesh && e.mesh.parent) {
+            scene.remove(e.mesh);
+          }
         }
       }
     }
@@ -300,7 +314,11 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   if (name === 'drive') {
     numSteps = 120;
 
-    var sedan = vehicles.createCar('sedan', 380, 64, 0, false);
+    // Vertical road x=384 (Casino Row), car at z=80 heading south (+z)
+    var driveRoadX = 384;
+    var driveCarZ = 80;
+    var driveHeading = Math.PI / 2; // +z
+    var sedan = vehicles.createCar('sedan', driveRoadX, driveCarZ, driveHeading, false);
     if (sedan) {
       vehicles.enterCar(sedan, player.player.mesh);
       player.player.inCar = true;
@@ -309,10 +327,27 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       sedan.aiSpeed = 25;
     }
 
+    var cosDH = Math.cos(driveHeading);
+    var sinDH = Math.sin(driveHeading);
+
+    // Traffic cars 12m and 20m ahead on same road, same direction
+    var traffic1 = vehicles.createCar('taxi', driveRoadX + cosDH * 12, driveCarZ + sinDH * 12, driveHeading, false);
+    if (traffic1) { traffic1.speed = 12; traffic1.aiSpeed = 18; }
+
+    var traffic2 = vehicles.createCar('sports', driveRoadX + cosDH * 20, driveCarZ + sinDH * 20, driveHeading, false);
+    if (traffic2) { traffic2.speed = 15; traffic2.aiSpeed = 20; }
+
+    // Oncoming car 18m ahead in opposite lane (offset laterally by 1 lane width)
+    var oppLane = -3; // negative lateral = opposite lane side
+    var oncomingX = driveRoadX + cosDH * 18 + sinDH * oppLane;
+    var oncomingZ = driveCarZ + sinDH * 18 - cosDH * oppLane;
+    var oncoming = vehicles.createCar('comet', oncomingX, oncomingZ, driveHeading + Math.PI, false);
+    if (oncoming) { oncoming.speed = 10; oncoming.aiSpeed = 16; }
+
+    // Background traffic on Casino Row roads
     const roads = findCasinoRowRoads(world3d);
     const nearbyRoads = roads.length > 0 ? roads : world3d.roads;
-
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 14; i++) {
       var road = rng.pick(nearbyRoads);
       var isVert = Math.abs(Math.sin(road.angle)) > 0.7;
       var angle = isVert ? Math.PI / 2 : 0;
@@ -344,9 +379,11 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       missions.cleanupMission(missions.activeMission);
       missions.activeMission = null;
     }
-    missions.setBeacon(PLACES.casino.x, PLACES.casino.z);
-    beaconX = PLACES.casino.x;
-    beaconZ = PLACES.casino.z;
+    // Beacon 60m down the same road so light pillar is visible ahead
+    var beaconZ = driveCarZ + 60;
+    missions.setBeacon(driveRoadX, beaconZ);
+    beaconX = driveRoadX;
+    beaconZ = beaconZ;
     missions.showDialogue('Go to the Port Azura Casino');
 
     if (audio) {
@@ -433,11 +470,11 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       police.officers.length = 0;
     }
 
-    // Place 3 cruisers at fixed offsets behind and beside player car
+    // Place 3 cruisers at fixed offsets between car and camera, flanking frame edges
     var cruiserOffsets = [
-      { behind: 8, lateral: 0 },
-      { behind: 6, lateral: 3 },
-      { behind: 10, lateral: -3 },
+      { behind: 5, lateral: -3 },
+      { behind: 6.5, lateral: 3 },
+      { behind: 0, lateral: 4.5 },
     ];
     for (var ci = 0; ci < 3; ci++) {
       var off = cruiserOffsets[ci];
@@ -519,7 +556,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     cone.position.set(0, -4.5, 1);
     heliGroup.add(cone);
 
-    heliGroup.position.set(pcx, 35, pcz - 8);
+    heliGroup.position.set(pcx + cosA * 15, 35, pcz + sinA * 15);
     scene.add(heliGroup);
 
     // Force wanted to 5 stars
@@ -546,10 +583,10 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     if (vehicles.playerCar) {
       var pcar = vehicles.playerCar;
       var cca = pcar.angle;
-      var bX = pcar.x - Math.cos(cca) * 8;
-      var bZ = pcar.z - Math.sin(cca) * 8;
-      camera.position.set(bX, 2.5, bZ);
-      camera.lookAt(pcar.x + Math.cos(cca) * 12, 1.2, pcar.z + Math.sin(cca) * 12);
+      var bX = pcar.x - Math.cos(cca) * 11;
+      var bZ = pcar.z - Math.sin(cca) * 11;
+      camera.position.set(bX, 3, bZ);
+      camera.lookAt(pcar.x + Math.cos(cca) * 10, 1.2, pcar.z + Math.sin(cca) * 10);
     }
 
     if (audio && audio.toggleRadio) {
@@ -560,16 +597,18 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'mission') {
-    player.player.angle = 0;
+    player.player.angle = missionHeading;
     var ppx = player.player.x;
     var ppz = player.player.z;
     var pa = player.player.angle;
-    var behindX = ppx - Math.cos(pa) * 4;
-    var behindZ = ppz - Math.sin(pa) * 4;
-    var rightX = Math.sin(pa) * 1.5;
-    var rightZ = -Math.cos(pa) * 1.5;
-    camera.position.set(behindX + rightX, 2.2, behindZ + rightZ);
-    camera.lookAt(ppx + Math.cos(pa) * 9, 1.5, ppz + Math.sin(pa) * 9);
+    var cosPA = Math.cos(pa);
+    var sinPA = Math.sin(pa);
+    var behindX = ppx - cosPA * 4.5;
+    var behindZ = ppz - sinPA * 4.5;
+    camera.position.set(behindX, 2.2, behindZ);
+    var lookX = ppx + cosPA * 9 + sinPA * 2.5;
+    var lookZ = ppz + sinPA * 9 - cosPA * 2.5;
+    camera.lookAt(lookX, 1.5, lookZ);
 
     missions.showDialogue("Bea: They're coming for the bar, Rio! Hold them off!");
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
@@ -579,9 +618,9 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     if (vehicles.playerCar) {
       var dcar = vehicles.playerCar;
       var dca = dcar.angle;
-      var dbehindX = dcar.x - Math.cos(dca) * 16;
-      var dbehindZ = dcar.z - Math.sin(dca) * 16;
-      camera.position.set(dbehindX, 5, dbehindZ);
+      var dbehindX = dcar.x - Math.cos(dca) * 9;
+      var dbehindZ = dcar.z - Math.sin(dca) * 9;
+      camera.position.set(dbehindX, 3.5, dbehindZ);
       camera.lookAt(dcar.x + Math.cos(dca) * 15, 2, dcar.z + Math.sin(dca) * 15);
     }
 
