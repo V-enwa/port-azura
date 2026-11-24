@@ -243,6 +243,17 @@ export function createVehicles(world3d, random, audio) {
       hubInner.position.z = -0.42;
       wheelGroup.add(hubInner);
 
+      var boltDotGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.03, 6);
+      var boltDotMat = new THREE.MeshPhongMaterial({ color: 0x222222, specular: 0x111111, shininess: 5 });
+      for (var bi = 0; bi < 5; bi++) {
+        var ba = (bi / 5) * Math.PI * 2 + (wi % 2) * Math.PI / 5;
+        var bd = wr * 0.5;
+        var bolt = new THREE.Mesh(boltDotGeo, boltDotMat);
+        bolt.position.set(Math.cos(ba) * bd, Math.sin(ba) * bd, -0.39);
+        bolt.rotation.z = Math.PI / 2;
+        wheelGroup.add(bolt);
+      }
+
       wheelGroup.position.set(pos.x, wr, pos.z);
       group.add(wheelGroup);
       wheelMeshes.push(tyre);
