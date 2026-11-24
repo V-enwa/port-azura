@@ -168,12 +168,12 @@ function renderHUD(hud, player, police, combat, missions, audio, gameModules, be
   var vehData = null;
   var veh = gameModules && gameModules.vehicles && gameModules.vehicles.playerCar;
   if (player.player.inCar && veh) {
-    var vType = veh.vehicleType || 'sedan';
+    var vType = veh.type || 'sedan';
     var vName = VEHICLE_DISPLAY[vType] || vType;
     vehData = {
       name: vName,
       speed: Math.round(Math.abs(veh.speed) * 3.6),
-      damagePct: veh.health ? (veh.health / 100 * 100) : 100,
+      damagePct: (veh.health && veh.maxHealth) ? (veh.health / veh.maxHealth * 100) : 100,
     };
   }
 
@@ -305,14 +305,14 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       car.aiSpeed = 0;
     }
 
-    police.addWanted(5);
+    police.addWanted(7);
   }
 
   if (name === 'mission') {
     numSteps = 180;
 
-    // Player on horizontal road z=64, in front of Coral Fin, facing east down the street
-    var missionPX = 10;
+    // Player in front of Coral Fin, facing east down the street
+    var missionPX = 0;
     var missionPZ = 64;
     var missionHeading = 0; // east (+x)
     player.setPlayerPosition(missionPX, missionPZ, missionHeading);
@@ -327,10 +327,11 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       var cosH = Math.cos(missionHeading);
       var sinH = Math.sin(missionHeading);
 
+      // Enemies placed directly in front of player, 6-10 m ahead, in camera view
       var enemyDefs = [
-        { forward: 6,  lateral: -3 },
-        { forward: 9,  lateral: 2.5 },
-        { forward: 12, lateral: 0 },
+        { forward: 7,  lateral: -2.5 },
+        { forward: 8,  lateral: 1.5 },
+        { forward: 10, lateral: -0.5 },
       ];
 
       for (var ei = 0; ei < mission.enemies.length; ei++) {
@@ -341,6 +342,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
           var ez = missionPZ + sinH * def.forward - cosH * def.lateral;
           e.x = ex;
           e.z = ez;
+          e.health = 999; // survive sim
           if (e.mesh) {
             e.mesh.position.x = ex;
             e.mesh.position.z = ez;
@@ -372,25 +374,26 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       sedan.aiSpeed = 27;
     }
 
-    // Traffic cars ahead at staggered distances for depth
-    var traffic1 = vehicles.createCar('taxi', driveCarX + 14, driveRoadZ + 3, driveHeading, false);
+    // Traffic cars directly on the road at z=320, staggered ahead for depth
+    var traffic1 = vehicles.createCar('taxi', driveCarX + 14, driveRoadZ, driveHeading, false);
     if (traffic1) { traffic1.speed = 14; traffic1.aiSpeed = 20; }
 
-    var traffic2 = vehicles.createCar('comet', driveCarX + 26, driveRoadZ - 3, driveHeading, false);
+    var traffic2 = vehicles.createCar('comet', driveCarX + 28, driveRoadZ, driveHeading, false);
     if (traffic2) { traffic2.speed = 16; traffic2.aiSpeed = 22; }
 
-    var traffic3 = vehicles.createCar('sports', driveCarX + 40, driveRoadZ + 2, driveHeading, false);
+    var traffic3 = vehicles.createCar('sports', driveCarX + 42, driveRoadZ, driveHeading, false);
     if (traffic3) { traffic3.speed = 12; traffic3.aiSpeed = 18; }
 
-    // Oncoming truck 28m ahead on opposite lane
-    var oncoming = vehicles.createCar('truck', driveCarX + 28, driveRoadZ - 8, driveHeading + Math.PI, false);
+    // Oncoming truck on the opposite lane (z=308, ~12m south)
+    var oncoming = vehicles.createCar('truck', driveCarX + 30, driveRoadZ - 12, driveHeading + Math.PI, false);
     if (oncoming) { oncoming.speed = 8; oncoming.aiSpeed = 14; }
 
-    // Palm trees lining the beachfront boulevard stretch (z=320, x=80 to 200)
+    // Palm trees lining the boulevard — avoid top-right corner intrusion
     var palmPositions = [
       { x: 85, z: 326 }, { x: 95, z: 326 }, { x: 105, z: 326 },
       { x: 140, z: 326 }, { x: 155, z: 326 },
-      { x: 88, z: 314 }, { x: 100, z: 314 }, { x: 145, z: 314 },
+      { x: 88, z: 314 }, { x: 100, z: 314 },
+      // Removed (145, 314) which intrudes top-right corner
     ];
     for (var pi = 0; pi < palmPositions.length; pi++) {
       var pp = palmPositions[pi];
@@ -430,13 +433,16 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     missions.showDialogue('Cruise the Beachfront Boulevard');
 
     if (audio) {
-      try { if (audio.cycleRadioStation) {
-        var radioAttempts = 0;
-        while ((audio.getRadioName ? audio.getRadioName() : '') !== 'Coast FM' && radioAttempts < 20) {
-          audio.cycleRadioStation();
-          radioAttempts++;
+      try {
+        if (audio.toggleRadio) audio.toggleRadio();
+        if (audio.cycleRadioStation) {
+          var radioAttempts = 0;
+          while ((audio.getRadioName ? audio.getRadioName() : '') !== 'Coast FM' && radioAttempts < 20) {
+            audio.cycleRadioStation();
+            radioAttempts++;
+          }
         }
-      }} catch(_) {}
+      } catch(_) {}
     }
 
     adjustGoldenHourLighting(scene);
@@ -496,8 +502,8 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     player.player.z = 64;
     player.player.angle = 0;
 
-    // Remove any police cars that were spawned during sim
-    for (var rci = police.policeCars.length - 1; rci >= 0; rci--) {
+    // Remove excess police cars — keep 3 for dispatch panel
+    for (var rci = police.policeCars.length - 1; rci >= 3; rci--) {
       var pcc = police.policeCars[rci];
       if (pcc) {
         pcc.alive = false;
@@ -508,172 +514,57 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
         if (pcc.mesh && pcc.mesh.parent) scene.remove(pcc.mesh);
       }
     }
-    police.policeCars.length = 0;
+    if (police.policeCars.length > 3) police.policeCars.length = 3;
 
-    // Remove officers
-    if (police.officers) {
-      for (var oi = police.officers.length - 1; oi >= 0; oi--) {
-        var off = police.officers[oi];
-        if (off && off.mesh && off.mesh.parent) scene.remove(off.mesh);
-      }
-      police.officers.length = 0;
-    }
-
-    // ONE police cruiser across the road, ~13 m north, facing our car head-on
+    // Position the visible pursuit cruiser ~13 m north, facing us
     var cruiserX = 195;
     var cruiserZ = 52;
     var cruiserHeading = Math.PI;
-    var cr = vehicles.createCar('police', cruiserX, cruiserZ, cruiserHeading, false);
-    if (cr) {
-      cr.isPursuitCar = true;
-      cr.sirenOn = true;
-      cr.speed = 0;
-      cr.aiSpeed = 0;
+    if (police.policeCars.length > 0) {
+      var cr = police.policeCars[0];
       cr.x = cruiserX;
       cr.z = cruiserZ;
       cr.angle = cruiserHeading;
       cr.mesh.position.x = cruiserX;
       cr.mesh.position.z = cruiserZ;
       cr.mesh.rotation.y = cruiserHeading;
+      cr.speed = 0;
+      cr.aiSpeed = 0;
+      cr.sirenOn = true;
+      cr.isPursuitCar = true;
       if (cr.lightbarMeshes) {
         for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
           if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
         }
       }
-      police.policeCars.push(cr);
     }
 
-    // AIR-7 Helicopter — fully in frame, moderate altitude
-    var heliGroup = new THREE.Group();
-
-    var bMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
-    var bladeMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
-
-    // Fuselage
-    var bodyGeo = new THREE.BoxGeometry(1.5, 1.0, 4.5);
-    var body = new THREE.Mesh(bodyGeo, bMat);
-    body.position.y = 0.6;
-    body.castShadow = true;
-    heliGroup.add(body);
-
-    // Nose cone
-    var noseGeo = new THREE.CylinderGeometry(0.1, 0.65, 1.2, 8);
-    var nose = new THREE.Mesh(noseGeo, bMat);
-    nose.rotation.x = Math.PI / 2;
-    nose.position.set(0, 0.5, 2.8);
-    nose.castShadow = true;
-    heliGroup.add(nose);
-
-    // Cockpit glass
-    var cockpitGeo = new THREE.BoxGeometry(1.0, 0.5, 0.9);
-    var cockpitMat = new THREE.MeshPhongMaterial({
-      color: 0x88aacc, specular: 0x888888, shininess: 60,
-      transparent: true, opacity: 0.4,
-    });
-    var cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
-    cockpit.position.set(0, 1.1, 1.5);
-    heliGroup.add(cockpit);
-
-    // Tail boom
-    var tailBoomGeo = new THREE.BoxGeometry(0.35, 0.45, 2.5);
-    var tailBoom = new THREE.Mesh(tailBoomGeo, bMat);
-    tailBoom.position.set(0, 0.4, -3.0);
-    tailBoom.castShadow = true;
-    heliGroup.add(tailBoom);
-
-    // Stabilizers
-    var stabGeo = new THREE.BoxGeometry(0.12, 0.15, 1.5);
-    var stab = new THREE.Mesh(stabGeo, bMat);
-    stab.position.set(0, 0.3, -4.0);
-    heliGroup.add(stab);
-
-    var vFinGeo = new THREE.BoxGeometry(0.12, 0.7, 0.5);
-    var vFin = new THREE.Mesh(vFinGeo, bMat);
-    vFin.position.set(0, 0.55, -4.0);
-    heliGroup.add(vFin);
-
-    // Tail rotor
-    var tailRotorGroup = new THREE.Group();
-    var tailBladeGeo = new THREE.BoxGeometry(0.06, 0.04, 1.2);
-    var tb1 = new THREE.Mesh(tailBladeGeo, bladeMat);
-    tailRotorGroup.add(tb1);
-    var tb2 = new THREE.Mesh(tailBladeGeo, bladeMat);
-    tb2.rotation.y = Math.PI / 2;
-    tailRotorGroup.add(tb2);
-    tailRotorGroup.position.set(0.25, 0.3, -4.2);
-    heliGroup.add(tailRotorGroup);
-
-    // Main rotor with disc
-    var rotorGroup = new THREE.Group();
-    rotorGroup.position.y = 1.25;
-
-    var mainBladeGeo = new THREE.BoxGeometry(0.12, 0.04, 3.0);
-    var mb1 = new THREE.Mesh(mainBladeGeo, bladeMat);
-    mb1.position.set(0, 0, 0);
-    rotorGroup.add(mb1);
-    var mb2 = new THREE.Mesh(mainBladeGeo, bladeMat);
-    mb2.rotation.y = Math.PI / 2;
-    mb2.position.set(0, 0, 0);
-    rotorGroup.add(mb2);
-
-    var discGeo = new THREE.CylinderGeometry(2.8, 2.8, 0.03, 32);
-    var discMat = new THREE.MeshBasicMaterial({
-      color: 0x888888,
-      transparent: true,
-      opacity: 0.15,
-      side: THREE.DoubleSide,
-    });
-    var disc = new THREE.Mesh(discGeo, discMat);
-    disc.position.set(0, 0, 0);
-    rotorGroup.add(disc);
-
-    // Rotor hub
-    var hubGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8);
-    var hubMesh = new THREE.Mesh(hubGeo, new THREE.MeshPhongMaterial({ color: 0x666666 }));
-    hubMesh.position.y = 0.05;
-    rotorGroup.add(hubMesh);
-
-    heliGroup.add(rotorGroup);
-
-    // Skids
-    var skidMat = new THREE.MeshPhongMaterial({ color: 0x555555 });
-    for (var sd = -1; sd <= 1; sd += 2) {
-      var skidGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
-      var skid = new THREE.Mesh(skidGeo, skidMat);
-      skid.rotation.x = Math.PI / 2;
-      skid.position.set(sd * 0.65, -0.35, 0.1);
-      skid.castShadow = true;
-      heliGroup.add(skid);
-
-      var legFGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
-      var legF = new THREE.Mesh(legFGeo, skidMat);
-      legF.position.set(sd * 0.65, -0.1, 1.0);
-      heliGroup.add(legF);
-
-      var legRGeo = new THREE.BoxGeometry(0.08, 0.5, 0.08);
-      var legR = new THREE.Mesh(legRGeo, skidMat);
-      legR.position.set(sd * 0.65, -0.1, -0.8);
-      heliGroup.add(legR);
+    // Position remaining 2 police cars at distance (for dispatch panel entries)
+    if (police.policeCars.length > 1) {
+      police.policeCars[1].x = 160;
+      police.policeCars[1].z = 68;
+      police.policeCars[1].mesh.position.x = 160;
+      police.policeCars[1].mesh.position.z = 68;
+    }
+    if (police.policeCars.length > 2) {
+      police.policeCars[2].x = 240;
+      police.policeCars[2].z = 58;
+      police.policeCars[2].mesh.position.x = 240;
+      police.policeCars[2].mesh.position.z = 58;
     }
 
-    // Spotlight (off to avoid washing out cars)
-    var heliAlt = 11.5;
-    var spotLight = new THREE.SpotLight(0xffffaa, 0.1, 1, Math.PI / 6, 0.3);
-    spotLight.position.set(0, -0.6, 1.5);
-    spotLight.target.position.set(0, -(heliAlt + 1), 5);
-    heliGroup.add(spotLight);
-    heliGroup.add(spotLight.target);
+    // Position AIR-7 helicopter inside camera frame (upper portion, readable shape)
+    if (police.helicopter && police.helicopter.mesh) {
+      var hm = police.helicopter.mesh;
+      hm.position.set(185, 13, 80);
+      hm.rotation.y = -0.35;
+    }
 
-    heliGroup.position.set(185, heliAlt, 81);
-    heliGroup.rotation.y = -0.4;
-    scene.add(heliGroup);
-    window.__shotHeliGroup = heliGroup;
+    // Force wanted to 5 stars, heat to 7
+    police.wantedHeat = 7;
+    police.wantedLevel = 5;
 
-    // Force wanted to 5 stars
-    if (police.wantedHeat !== undefined) police.wantedHeat = 7;
-    if (police.wantedLevel !== undefined) police.wantedLevel = 5;
-
-    // Show PAPD dispatch radio line
+    // Show radio dispatch line
     if (missions && missions.showDialogue) {
       missions.showDialogue('PAPD dispatch: all units respond, 5-star felony pursuit');
     }
@@ -712,12 +603,13 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     var pa = player.player.angle;
     var cosPA = Math.cos(pa);
     var sinPA = Math.sin(pa);
-    var behindX = ppx - cosPA * 4.5;
-    var behindZ = ppz - sinPA * 4.5;
-    camera.position.set(behindX, 2.2, behindZ);
-    var lookX = ppx + cosPA * 9 + sinPA * 2.5;
-    var lookZ = ppz + sinPA * 9 - cosPA * 2.5;
-    camera.lookAt(lookX, 1.5, lookZ);
+    // Pull camera back and up to clearly frame player + enemies ahead
+    var behindX = ppx - cosPA * 6;
+    var behindZ = ppz - sinPA * 6;
+    camera.position.set(behindX, 3.1, behindZ);
+    var lookX = ppx + cosPA * 10;
+    var lookZ = ppz + sinPA * 10;
+    camera.lookAt(lookX, 1.4, lookZ);
 
     missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
@@ -731,10 +623,6 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       var dbehindZ = dcar.z - Math.sin(dca) * 10;
       camera.position.set(dbehindX, 4.0, dbehindZ);
       camera.lookAt(dcar.x + Math.cos(dca) * 20, 1.8, dcar.z + Math.sin(dca) * 20);
-    }
-
-    if (audio && audio.toggleRadio) {
-      try { audio.toggleRadio(); } catch (_) {}
     }
 
     renderHUD(hud, player, police, combat, missions, audio, gameModules, beaconX, beaconZ);

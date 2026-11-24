@@ -25,7 +25,7 @@ export function createHUD(player, police, combat, missions, vehicles) {
   var starSpans = els.wantedStars ? els.wantedStars.querySelectorAll('span') || [] : [];
 
   function safeText(el, text) { if (el) el.textContent = text; }
-  function safeDisplay(el, show) { if (el) el.style.display = show ? '' : 'none'; }
+  function safeDisplay(el, show) { if (el) el.style.display = show ? 'block' : 'none'; }
 
   function updateHUD(data) {
     if (!data) data = {};

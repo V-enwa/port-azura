@@ -440,8 +440,32 @@ if (shotName) {
     input: input,
   };
 
-  stageShot(shotName, seed, gameModules, renderer, scene, camera).then(function() {
-    console.log('Shot ready:', shotName);
+  function doStageShot() {
+    stageShot(shotName, seed, gameModules, renderer, scene, camera).then(function() {
+      console.log('Shot ready:', shotName);
+    });
+  }
+
+  // Wait for the audio module to finish loading so radio/toggle/cycle work in shots
+  import('./audio.js').then(function(m) {
+    window._gameAudio.resumeAudio = m.resumeAudio || (function() {});
+    window._gameAudio.playGunshot = m.playGunshot || (function() {});
+    window._gameAudio.playExplosion = m.playExplosion || (function() {});
+    window._gameAudio.playPickup = m.playPickup || (function() {});
+    window._gameAudio.playUIClick = m.playUIClick || (function() {});
+    window._gameAudio.playSiren = m.playSiren || (function() {});
+    window._gameAudio.toggleRadio = m.toggleRadio || (function() {});
+    window._gameAudio.cycleRadioStation = m.cycleRadioStation || (function() {});
+    window._gameAudio.updateRadio = m.updateRadio || (function() {});
+    window._gameAudio.getRadioName = m.getRadioName || (function() { return ''; });
+    window._gameAudio.startEngine = m.startEngine || (function() {});
+    window._gameAudio.stopEngine = m.stopEngine || (function() {});
+    window._gameAudio.setEngineRPM = m.setEngineRPM || (function() {});
+    window._gameAudio.setEngineVol = m.setEngineVol || (function() {});
+    window._gameAudio.resumeAudio();
+    doStageShot();
+  }).catch(function() {
+    doStageShot();
   });
 } else {
   lastTime = performance.now();

@@ -144,8 +144,11 @@ export function createVehicles(world3d, random, audio) {
     }
 
     // --- Wheels ---
-    const tyreGeo = new THREE.CylinderGeometry(wr, wr, 0.5, 16);
-    const hubGeo = new THREE.CylinderGeometry(wr * 0.55, wr * 0.55, 0.52, 8);
+    // Solid dark tyre: wider cylinder (1.0 tread width) so it never reads as a thin ring.
+    // Rotation puts the flat circular faces facing Z (car lateral axis), axle along Z.
+    const tyreGeo = new THREE.CylinderGeometry(wr, wr, 0.85, 20);
+    // Hub disc: thin filled disc flush against outer face so wheel never reads as hollow.
+    const hubDiscGeo = new THREE.CylinderGeometry(wr * 0.8, wr * 0.8, 0.06, 20);
     const tyreMat = createWheelMaterial();
     const hubMat = createHubMaterial();
 
@@ -164,15 +167,17 @@ export function createVehicles(world3d, random, audio) {
       const tyre = new THREE.Mesh(tyreGeo, tyreMat);
       tyre.rotation.z = Math.PI / 2;
       tyre.castShadow = true;
+      tyre.receiveShadow = true;
       wheelGroup.add(tyre);
 
-      const hub = new THREE.Mesh(hubGeo, hubMat);
-      hub.rotation.z = Math.PI / 2;
-      wheelGroup.add(hub);
+      const hubDisc = new THREE.Mesh(hubDiscGeo, hubMat);
+      hubDisc.rotation.z = Math.PI / 2;
+      hubDisc.position.z = -0.44;
+      wheelGroup.add(hubDisc);
 
       wheelGroup.position.set(pos.x, wr, pos.z);
       group.add(wheelGroup);
-      wheelMeshes.push(wheelGroup.children[0]); // tyre for rotation
+      wheelMeshes.push(tyre);
     }
 
     // --- Headlights ---
