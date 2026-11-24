@@ -223,45 +223,18 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    numSteps = 120;
+    numSteps = 5;
 
-    var car = vehicles.createCar('sports', 300, 200, Math.PI / 4, false);
+    var car = vehicles.createCar('sports', 200, 64, 0, false);
     if (car) {
       vehicles.enterCar(car, player.player.mesh);
       player.player.inCar = true;
       player.player.car = car;
-      car.speed = 25;
-      car.aiSpeed = 30;
+      car.speed = 0;
+      car.aiSpeed = 0;
     }
 
-    police.addWanted(10);
-    police.dispatchPolice(player.player.x, player.player.z);
-
-    for (let i = 0; i < 3; i++) {
-      var behindDist = 20 + i * 20;
-      var bx = 300 - Math.cos(Math.PI / 4) * behindDist;
-      var bz = 200 - Math.sin(Math.PI / 4) * behindDist;
-      var cruiser = vehicles.createCar('police', bx, bz, Math.PI / 4, false);
-      if (cruiser) {
-        cruiser.isPursuitCar = true;
-        cruiser.sirenOn = true;
-        cruiser.aiSpeed = 38;
-        cruiser.speed = 25;
-        police.policeCars.push(cruiser);
-      }
-    }
-
-    police.dispatchPolice(player.player.x, player.player.z);
-
-    if (audio) {
-      try { if (audio.cycleRadioStation) {
-        var radioAttempts = 0;
-        while ((audio.getRadioName ? audio.getRadioName() : '') !== 'Neon Nights' && radioAttempts < 20) {
-          audio.cycleRadioStation();
-          radioAttempts++;
-        }
-      }} catch(_) {}
-    }
+    police.addWanted(5);
   }
 
   if (name === 'mission') {
@@ -432,22 +405,32 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     }
 
     simulateStep(dt, gameModules, fakeInput);
-
-    if (name === 'chase' && i % 20 === 0 && vehicles.playerCar) {
-      police.dispatchPolice(player.player.x, player.player.z);
-    }
   }
 
-// --- POST-SIMULATION: lock chase elements at fixed offsets ---
+// --- POST-SIMULATION: cinematic chase standoff ---
   if (name === 'chase' && vehicles.playerCar) {
     var pc = vehicles.playerCar;
+
+    // Lock player car at standoff position on horizontal road z=64, heading east
+    pc.x = 200;
+    pc.z = 64;
+    pc.angle = 0;
+    pc.mesh.position.x = 200;
+    pc.mesh.position.z = 64;
+    pc.mesh.rotation.y = 0;
+    pc.speed = 0;
+    pc.aiSpeed = 0;
+    player.player.x = 200;
+    player.player.z = 64;
+    player.player.angle = 0;
+
     var ca = pc.angle;
     var pcx = pc.x;
     var pcz = pc.z;
     var cosA = Math.cos(ca);
     var sinA = Math.sin(ca);
 
-    // Remove existing police cars
+    // Remove any police cars that were spawned during sim
     for (var rci = police.policeCars.length - 1; rci >= 0; rci--) {
       var pcc = police.policeCars[rci];
       if (pcc) {
@@ -470,51 +453,31 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       police.officers.length = 0;
     }
 
-    // Place 3 cruisers at fixed offsets between car and camera, flanking frame edges
-    var cruiserOffsets = [
-      { behind: 5, lateral: -3 },
-      { behind: 6.5, lateral: 3 },
-      { behind: 0, lateral: 4.5 },
-    ];
-    for (var ci = 0; ci < 3; ci++) {
-      var off = cruiserOffsets[ci];
-      var cx = pcx - cosA * off.behind + sinA * off.lateral;
-      var cz = pcz - sinA * off.behind - cosA * off.lateral;
-      var cr = vehicles.createCar('police', cx, cz, ca, false);
-      if (cr) {
-        cr.isPursuitCar = true;
-        cr.sirenOn = true;
-        cr.speed = 25;
-        cr.aiSpeed = 35;
-        cr.x = cx;
-        cr.z = cz;
-        cr.angle = ca;
-        cr.mesh.position.x = cx;
-        cr.mesh.position.z = cz;
-        cr.mesh.rotation.y = ca;
-        if (cr.lightbarMeshes) {
-          for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
-            if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
-          }
+    // ONE police cruiser on the opposite side of the road, facing our car head-on
+    var cruiserX = 205;
+    var cruiserZ = 60;
+    var cruiserHeading = Math.PI;
+    var cr = vehicles.createCar('police', cruiserX, cruiserZ, cruiserHeading, false);
+    if (cr) {
+      cr.isPursuitCar = true;
+      cr.sirenOn = true;
+      cr.speed = 0;
+      cr.aiSpeed = 0;
+      cr.x = cruiserX;
+      cr.z = cruiserZ;
+      cr.angle = cruiserHeading;
+      cr.mesh.position.x = cruiserX;
+      cr.mesh.position.z = cruiserZ;
+      cr.mesh.rotation.y = cruiserHeading;
+      if (cr.lightbarMeshes) {
+        for (var lb = 0; lb < cr.lightbarMeshes.length; lb++) {
+          if (cr.lightbarMeshes[lb]) cr.lightbarMeshes[lb].visible = true;
         }
-        police.policeCars.push(cr);
       }
+      police.policeCars.push(cr);
     }
 
-    // Roadblock ~25m ahead: 3 police cars parked across the road
-    var rbx = pcx + cosA * 25;
-    var rbz = pcz + sinA * 25;
-    for (var rb = 0; rb < 3; rb++) {
-      var rbcx = rbx + sinA * (rb - 1) * 5;
-      var rbcz = rbz - cosA * (rb - 1) * 5;
-      var rbCar = vehicles.createCar('police', rbcx, rbcz, ca, true);
-      if (rbCar) {
-        rbCar.alive = true;
-        rbCar.roadblockStuck = true;
-      }
-    }
-
-    // Helicopter above player car — AIR-7 visible in upper third of frame
+    // AIR-7 Helicopter — fully in frame, moderate altitude
     var heliGroup = new THREE.Group();
 
     var bMat = new THREE.MeshPhongMaterial({ color: 0x1a1a3a, specular: 0x222244, shininess: 30 });
@@ -627,33 +590,27 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       heliGroup.add(legR);
     }
 
-    // Spotlight
-    var heliAlt = 16;
-    var spotLight = new THREE.SpotLight(0xffffaa, 2.5, 60, Math.PI / 6, 0.3);
+    // Spotlight (off to avoid washing out cars)
+    var heliAlt = 11.5;
+    var spotLight = new THREE.SpotLight(0xffffaa, 0.1, 1, Math.PI / 6, 0.3);
     spotLight.position.set(0, -0.6, 1.5);
     spotLight.target.position.set(0, -(heliAlt + 1), 5);
     heliGroup.add(spotLight);
     heliGroup.add(spotLight.target);
 
-    // Spotlight cone
-    var coneGeo = new THREE.CylinderGeometry(0.1, 4, 10, 8, 1);
-    var coneMat = new THREE.MeshBasicMaterial({
-      color: 0xffffaa,
-      transparent: true,
-      opacity: 0.06,
-      side: THREE.DoubleSide,
-    });
-    var cone = new THREE.Mesh(coneGeo, coneMat);
-    cone.position.set(0, -5.5, 2);
-    heliGroup.add(cone);
-
-    heliGroup.position.set(pcx + cosA * 25, heliAlt, pcz + sinA * 25);
+    heliGroup.position.set(185, heliAlt, 81);
+    heliGroup.rotation.y = -0.4;
     scene.add(heliGroup);
     window.__shotHeliGroup = heliGroup;
 
     // Force wanted to 5 stars
     if (police.wantedHeat !== undefined) police.wantedHeat = 7;
     if (police.wantedLevel !== undefined) police.wantedLevel = 5;
+
+    // Show PAPD dispatch radio line
+    if (missions && missions.showDialogue) {
+      missions.showDialogue('PAPD dispatch: all units respond, 5-star felony pursuit');
+    }
 
     if (audio && audio.playSiren) {
       try { audio.playSiren(true); } catch (_) {}
@@ -672,18 +629,12 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
   }
 
   if (name === 'chase') {
-    if (vehicles.playerCar) {
-      var pcar = vehicles.playerCar;
-      var cca = pcar.angle;
-      var bX = pcar.x - Math.cos(cca) * 11;
-      var bZ = pcar.z - Math.sin(cca) * 11;
-      camera.position.set(bX, 3.4, bZ);
-      camera.lookAt(pcar.x + Math.cos(cca) * 10, 1.2, pcar.z + Math.sin(cca) * 10);
-    }
-
-    if (audio && audio.toggleRadio) {
-      try { audio.toggleRadio(); } catch (_) {}
-    }
+    // External cinematic camera: front-quarter side, ~15 m away, 4.3 m high
+    var camX = 212;
+    var camY = 4.3;
+    var camZ = 55;
+    camera.position.set(camX, camY, camZ);
+    camera.lookAt(200, 1.5, 64);
 
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
   }
