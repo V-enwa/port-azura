@@ -1,19 +1,82 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Block Dodger</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, height=720, initial-scale=1">
+<title>Port Azura</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #11141b; }
-  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
-  /* Read aloud, never shown: the status line screen readers announce. */
-  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1280px; height: 720px; overflow: hidden; background: #000; font-family: monospace; color: #fff; }
+body { position: relative; }
+canvas { display: block; position: absolute; top: 0; left: 0; z-index: 0; }
+
+#title-screen {
+  display: none;
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 10;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.6), rgba(0,0,0,0.8));
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+}
+#title-screen h1 { font-size: 48px; color: #f39c12; text-shadow: 0 0 20px #f39c12, 0 0 40px #e74c3c; margin-bottom: 8px; letter-spacing: 4px; }
+#title-screen .subtitle { font-size: 16px; color: #ccc; margin-bottom: 30px; max-width: 500px; line-height: 1.5; }
+#title-screen .menu { font-size: 18px; }
+#title-screen .menu div { margin: 10px 0; cursor: pointer; padding: 8px 24px; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; transition: background 0.2s; }
+#title-screen .menu div:hover { background: rgba(255,255,255,0.1); }
+
+/* HUD */
+#hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+#hud-cash { position: absolute; top: 16px; right: 200px; font-size: 20px; color: #f39c12; text-shadow: 0 0 4px rgba(0,0,0,0.8); font-weight: bold; }
+#hud-respect { position: absolute; top: 40px; right: 200px; font-size: 14px; color: #ccc; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-health { position: absolute; top: 16px; left: 16px; width: 180px; height: 14px; background: #333; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+#hud-health-fill { width: 100%; height: 100%; background: #2ecc71; transition: width 0.2s; }
+#hud-armour { position: absolute; top: 34px; left: 16px; width: 180px; height: 10px; background: #333; border-radius: 3px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+#hud-armour-fill { width: 0%; height: 100%; background: #3498db; transition: width 0.2s; }
+#hud-weapon { position: absolute; bottom: 30px; right: 24px; text-align: right; }
+#hud-weapon-name { font-size: 18px; color: #fff; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-weapon-ammo { font-size: 14px; color: #aaa; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-wanted-stars { position: absolute; top: 16px; right: 24px; display: flex; gap: 4px; }
+#hud-wanted-stars .star { font-size: 22px; color: #555; transition: color 0.3s; text-shadow: 0 0 4px rgba(0,0,0,0.8); }
+#hud-wanted-stars .star-filled { font-size: 22px; color: #f5c842; text-shadow: 0 0 8px #f5c842; transition: color 0.3s; }
+#hud-wanted-stars .star-empty { font-size: 22px; color: #555; text-shadow: 0 0 4px rgba(0,0,0,0.8); transition: color 0.3s; }
+#hud-objective { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); font-size: 14px; color: #f39c12; text-shadow: 0 0 6px rgba(0,0,0,0.8); text-align: center; }
+#hud-dialogue { position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); max-width: 600px; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; padding: 12px 20px; font-size: 15px; color: #fff; text-align: center; display: none; }
+#hud-radio { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font-size: 12px; color: rgba(255,255,255,0.5); }
+#minimap { position: absolute; bottom: 16px; left: 16px; width: 180px; height: 180px; border: 2px solid rgba(255,255,255,0.3); border-radius: 4px; overflow: hidden; }
+#minimap canvas { width: 100%; height: 100%; position: static; }
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="Block Dodger: move the paddle left and right to dodge falling blocks and catch coins"></canvas>
-<p id="status" role="status" aria-live="polite"></p>
+
+<div id="title-screen">
+  <h1>PORT AZURA</h1>
+  <div class="subtitle">Dario "Rio" Salas comes home. The Chrome Cobras are squeezing the waterfront. Time to take the cove back.</div>
+  <div class="menu">
+    <div id="btn-new-game">New Game</div>
+    <div id="btn-continue">Continue</div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="hud-cash">$500</div>
+  <div id="hud-respect">Drifter</div>
+  <div id="hud-health"><div id="hud-health-fill"></div></div>
+  <div id="hud-armour"><div id="hud-armour-fill"></div></div>
+  <div id="hud-weapon"><div id="hud-weapon-name">Pistol</div><div id="hud-weapon-ammo">12/60</div></div>
+  <div id="hud-wanted-stars">
+    <span class="star empty">&#9733;</span>
+    <span class="star empty">&#9733;</span>
+    <span class="star empty">&#9733;</span>
+    <span class="star empty">&#9733;</span>
+    <span class="star empty">&#9733;</span>
+  </div>
+  <div id="hud-objective"></div>
+  <div id="hud-dialogue"></div>
+  <div id="hud-radio">Radio Off</div>
+  <div id="minimap"><canvas id="minimap-canvas" width="180" height="180"></canvas></div>
+</div>
+
+<script src="./vendor/three.min.js"></script>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
