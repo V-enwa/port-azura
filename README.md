@@ -39,3 +39,10 @@ Open **http://localhost:8080** in Chrome or any modern browser that supports Web
 - **Save & continue** — progress is saved to localStorage
 - **Neon signs** — distinct district colours with animated neon storefronts along Casino Row
 - **Dusk & night lighting** — directional, hemisphere, and ambient lights with fog
+
+## Screenshots
+
+- **Cover** — The Port Azura Casino at dusk, bathed in magenta neon glow with traffic rolling down Casino Row.
+- **Chase** — Rio's sports car tears through the city with three police cruisers in pursuit under a police helicopter spotlight.
+- **Mission** — Rio faces down Chrome Cobra enforcers outside the Coral Fin bar, weapon drawn, in a street shootout.
+- **Drive** — A nighttime cruise down Casino Row in a sedan, taxi and sports cars ahead, with the mission beacon lighting the way.

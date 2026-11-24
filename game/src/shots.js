@@ -276,7 +276,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
 
     var mission = missions.startMission(4);
     if (mission) {
-      missions.showDialogue("Bea: They're coming for the bar, Rio! Hold them off!");
+      missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
     }
 
     if (mission && mission.enemies) {
@@ -585,7 +585,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
       var cca = pcar.angle;
       var bX = pcar.x - Math.cos(cca) * 11;
       var bZ = pcar.z - Math.sin(cca) * 11;
-      camera.position.set(bX, 3, bZ);
+      camera.position.set(bX, 3.4, bZ);
       camera.lookAt(pcar.x + Math.cos(cca) * 10, 1.2, pcar.z + Math.sin(cca) * 10);
     }
 
@@ -610,7 +610,7 @@ export async function stageShot(name, seed, gameModules, renderer, scene, camera
     var lookZ = ppz + sinPA * 9 - cosPA * 2.5;
     camera.lookAt(lookX, 1.5, lookZ);
 
-    missions.showDialogue("Bea: They're coming for the bar, Rio! Hold them off!");
+    missions.showDialogue("Bea: Rio! The Cobras are hitting the Fin — hold the door!");
     renderHUD(hud, player, police, combat, missions, audio, gameModules, 0, 0);
   }
 

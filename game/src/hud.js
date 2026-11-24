@@ -201,6 +201,11 @@ export function createHUD(player, police, combat, missions, vehicles) {
     ctx.fill();
     ctx.restore();
 
+    ctx.fillStyle = '#cccccc';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('N', w - 12, 14);
+
     ctx.strokeStyle = '#444444';
     ctx.lineWidth = 1;
     ctx.strokeRect(0, 0, w, h);
